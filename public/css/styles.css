@@ -1,0 +1,407 @@
+/* Main Layout, App Navigation, Views & Dashboards */
+
+/* Loading Screen */
+#loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: var(--paper-bg-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    transition: opacity 400ms ease-out, visibility 400ms ease-out;
+}
+
+#loading-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.splash-logo-container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.splash-icon {
+    width: 64px;
+    height: 64px;
+    background: var(--accent-primary);
+    color: #FFFFFF;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 12px 32px rgba(107, 143, 216, 0.35);
+}
+
+.splash-title {
+    font-size: 38px;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+}
+
+.spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Main App Shell */
+#app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Glass Top Navigation Bar */
+.top-navbar {
+    position: sticky;
+    top: 12px;
+    left: 0;
+    right: 0;
+    margin: 12px 20px 0 20px;
+    height: 68px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 500;
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.nav-logo-icon {
+    width: 38px;
+    height: 38px;
+    background: var(--accent-primary);
+    color: #FFFFFF;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.nav-link:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.nav-link.active {
+    color: var(--accent-primary);
+    background: var(--accent-light);
+}
+
+.nav-user-controls {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+/* Notification Dropdown Container */
+.notif-dropdown-wrapper {
+    position: relative;
+}
+
+.notif-panel {
+    position: absolute;
+    top: 54px;
+    right: 0;
+    width: 360px;
+    max-height: 480px;
+    overflow-y: auto;
+    background: rgba(247, 246, 243, 0.96);
+    backdrop-filter: var(--glass-backdrop-filter);
+    border: var(--glass-border);
+    box-shadow: var(--glass-shadow-hover);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    display: none;
+    z-index: 900;
+}
+
+.notif-panel.active {
+    display: block;
+}
+
+.notif-item {
+    padding: 12px;
+    border-bottom: 1px solid var(--divider-bg);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.notif-item.unread {
+    background: var(--accent-light);
+    font-weight: 600;
+}
+
+.notif-item:last-child {
+    border-bottom: none;
+}
+
+/* Views & Page Containers */
+.view-container {
+    flex: 1;
+    padding: 24px;
+    max-width: 1300px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.dashboard-header {
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.dashboard-title {
+    font-size: var(--font-size-3xl);
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.dashboard-subtitle {
+    font-size: var(--font-size-base);
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+/* Tab Bar inside Views */
+.tab-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 12px;
+}
+
+.tab-btn {
+    padding: 10px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.tab-btn.active {
+    color: #FFFFFF;
+    background: var(--accent-primary);
+}
+
+/* Chat Component Layout */
+.chat-container {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 20px;
+    height: 600px;
+}
+
+.chat-sidebar {
+    background: var(--glass-bg);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    overflow-y: auto;
+    border: var(--glass-border);
+}
+
+.chat-contact-item {
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.chat-contact-item:hover, .chat-contact-item.active {
+    background: var(--accent-light);
+}
+
+.chat-main {
+    display: flex;
+    flex-direction: column;
+    background: var(--glass-bg);
+    border-radius: var(--radius-md);
+    border: var(--glass-border);
+    overflow: hidden;
+}
+
+.chat-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 700;
+}
+
+.chat-messages-list {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.chat-bubble {
+    max-width: 70%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 15px;
+    line-height: 1.4;
+    user-select: text;
+}
+
+.chat-bubble.mine {
+    align-self: flex-end;
+    background: var(--accent-primary);
+    color: #FFFFFF;
+    border-bottom-right-radius: 4px;
+}
+
+.chat-bubble.other {
+    align-self: flex-start;
+    background: #FFFFFF;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-bottom-left-radius: 4px;
+}
+
+.chat-input-bar {
+    padding: 16px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 12px;
+}
+
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 10000;
+}
+
+.toast {
+    padding: 14px 22px;
+    border-radius: var(--radius-md);
+    background: rgba(46, 46, 46, 0.92);
+    color: #FFFFFF;
+    font-size: 15px;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    animation: slideIn 300ms ease-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Report Progress Card UI */
+.progress-card-report {
+    background: #FAF8F5;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    box-shadow: var(--glass-shadow-hover);
+}
+
+.progress-card-header {
+    border-bottom: 2px solid var(--text-primary);
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.progress-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.stat-box {
+    background: #FFFFFF;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--accent-primary);
+    margin-top: 6px;
+}
+
+/* Responsive Rules for Tablet */
+@media (max-width: 900px) {
+    .top-navbar {
+        margin: 8px 12px;
+        padding: 0 16px;
+    }
+    .view-container {
+        padding: 16px;
+    }
+    .chat-container {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+}
