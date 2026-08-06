@@ -4,6 +4,7 @@ const { get, all, run } = require('../db/database');
 const { authenticateToken } = require('../middleware/auth');
 const { requireRole } = require('../middleware/rbac');
 const { sendNotification } = require('../services/socketHandler');
+const { sendStudentAlert } = require('../services/alertService');
 
 async function getStudentId(userId) {
     const student = await get("SELECT id, class_id FROM students WHERE user_id = ?", [userId]);
@@ -18,7 +19,7 @@ router.get('/', authenticateToken, async (req, res) => {
             if (!student || !student.class_id) return res.json({ exams: [] });
 
             const exams = await all(
-                `SELECT e.id, e.class_id, e.title, e.duration_minutes, e.created_at,
+                `SELECT e.id, e.class_id, e.title, e.duration_minutes, e.start_time, e.end_time, e.created_at,
                         er.id as result_id, er.score, er.total_points, er.submitted_at
                  FROM exams e
                  LEFT JOIN exam_results er ON e.id = er.exam_id AND er.student_id = ?
@@ -52,7 +53,7 @@ router.get('/', authenticateToken, async (req, res) => {
             if (!student) return res.json({ exams: [] });
 
             const exams = await all(
-                `SELECT e.id, e.title, e.duration_minutes,
+                `SELECT e.id, e.title, e.duration_minutes, e.start_time, e.end_time,
                         er.score, er.total_points, er.submitted_at
                  FROM exams e
                  LEFT JOIN exam_results er ON e.id = er.exam_id AND er.student_id = ?
@@ -77,7 +78,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
         const questions = JSON.parse(exam.questions_json || '[]');
 
-        // Sanitized version for student taking exam (omit correct answers if needed, or include for instant feedback)
+        // Sanitized version for student taking exam
         let studentResult = null;
         if (req.user.role === 'student') {
             const student = await getStudentId(req.user.id);
@@ -92,6 +93,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
                 title: exam.title,
                 class_id: exam.class_id,
                 duration_minutes: exam.duration_minutes,
+                start_time: exam.start_time,
+                end_time: exam.end_time,
                 questions
             },
             result: studentResult ? {
@@ -108,14 +111,14 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // POST /api/exams - Create & Publish Exam (Teacher)
 router.post('/', authenticateToken, requireRole('teacher'), async (req, res) => {
     try {
-        const { class_id, title, questions, duration_minutes } = req.body;
+        const { class_id, title, questions, duration_minutes, start_time, end_time } = req.body;
         if (!class_id || !title || !questions || !Array.isArray(questions)) {
             return res.status(400).json({ error: 'class_id, title, and valid questions array are required.' });
         }
 
         const result = await run(
-            "INSERT INTO exams (class_id, title, questions_json, duration_minutes, created_by) VALUES (?, ?, ?, ?, ?)",
-            [class_id, title.trim(), JSON.stringify(questions), duration_minutes || 30, req.user.id]
+            "INSERT INTO exams (class_id, title, questions_json, duration_minutes, start_time, end_time, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [class_id, title.trim(), JSON.stringify(questions), duration_minutes || 30, start_time || null, end_time || null, req.user.id]
         );
 
         // Send push notification to students
@@ -214,6 +217,27 @@ router.get('/:id/results', authenticateToken, requireRole('teacher'), async (req
     } catch (err) {
         console.error('Fetch exam results error:', err);
         res.status(500).json({ error: 'Error fetching exam results.' });
+    }
+});
+
+// POST /api/exams/:id/fraud-alert - Log strict lockdown violation & notify teacher & parent
+router.post('/:id/fraud-alert', authenticateToken, requireRole('student'), async (req, res) => {
+    try {
+        const examId = req.params.id;
+        const { reason } = req.body;
+        const student = await getStudentId(req.user.id);
+        if (!student) return res.status(400).json({ error: 'Student profile not found.' });
+
+        const exam = await get("SELECT * FROM exams WHERE id = ?", [examId]);
+        const examTitle = exam ? exam.title : 'Exam';
+
+        const alertMessage = `Strict Lockdown Violation during "${examTitle}": ${reason || 'App or window focus lost.'}`;
+        await sendStudentAlert(req.app, student.id, 'fraud', alertMessage);
+
+        res.json({ message: 'Fraud alert recorded and sent to teacher & parent.' });
+    } catch (err) {
+        console.error('Fraud alert error:', err);
+        res.status(500).json({ error: 'Error logging fraud alert.' });
     }
 });
 

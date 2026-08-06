@@ -139,6 +139,8 @@ CREATE TABLE IF NOT EXISTS exams (
     title TEXT NOT NULL,
     questions_json TEXT NOT NULL,
     duration_minutes INTEGER DEFAULT 30,
+    start_time DATETIME,
+    end_time DATETIME,
     created_by INTEGER NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,

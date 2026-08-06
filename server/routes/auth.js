@@ -3,11 +3,35 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const { get, run } = require('../db/database');
 const { generateToken, authenticateToken } = require('../middleware/auth');
+const { rateLimiter } = require('../middleware/rateLimiter');
+
+const authRateLimiter = rateLimiter({ windowMs: 15 * 60 * 1000, max: 20 });
+
+// GET /api/auth/profiles - Public registered profiles for device Lock Screen
+router.get('/profiles', async (req, res) => {
+    try {
+        const { all } = require('../db/database');
+        const users = await all("SELECT id, name, role, email, student_code FROM users ORDER BY id ASC");
+        const profiles = users.map(u => ({
+            id: u.id,
+            name: u.name,
+            role: u.role,
+            email: u.email,
+            student_code: u.student_code,
+            avatar: u.role === 'student' ? '👨‍🎓' : u.role === 'teacher' ? '👩‍🏫' : '👨‍👩‍👦',
+            color: u.role === 'student' ? 'var(--accent-coral)' : u.role === 'teacher' ? 'var(--accent-blue)' : 'var(--accent-purple)'
+        }));
+        res.json({ profiles });
+    } catch (err) {
+        console.error('Fetch profiles error:', err);
+        res.status(500).json({ error: 'Error fetching lockscreen profiles.' });
+    }
+});
 
 // Signup
-router.post('/signup', async (req, res) => {
+router.post('/signup', authRateLimiter, async (req, res) => {
     try {
-        const { name, role, email, password } = req.body;
+        const { name, role, email, password, class_id } = req.body;
 
         if (!name || !role || !email || !password) {
             return res.status(400).json({ error: 'Please provide all required fields: name, role, email, password.' });
@@ -39,12 +63,15 @@ router.post('/signup', async (req, res) => {
 
         // Auto-assign profile record based on role
         if (role === 'student') {
-            // Find default class (Grade 5 Alpha)
-            const defaultClass = await get("SELECT id FROM classes ORDER BY id ASC LIMIT 1");
-            const classId = defaultClass ? defaultClass.id : null;
+            let assignedClassId = class_id ? parseInt(class_id) : null;
+            if (!assignedClassId) {
+                const defaultClass = await get("SELECT id FROM classes ORDER BY id ASC LIMIT 1");
+                assignedClassId = defaultClass ? defaultClass.id : null;
+            }
+
             const sRes = await run(
                 "INSERT INTO students (user_id, class_id, student_code) VALUES (?, ?, ?)",
-                [userId, classId, studentCode]
+                [userId, assignedClassId, studentCode]
             );
             // Create default initial book for student
             await run(
@@ -77,7 +104,7 @@ router.post('/signup', async (req, res) => {
 });
 
 // Login
-router.post('/login', async (req, res) => {
+router.post('/login', authRateLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
 

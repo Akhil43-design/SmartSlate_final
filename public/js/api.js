@@ -44,7 +44,45 @@ const API = {
             return data;
         } catch (err) {
             console.error(`API Error [${endpoint}]:`, err);
+            
+            // Queue mutating requests when offline or fetch fails
+            const method = (options.method || 'GET').toUpperCase();
+            if ((!navigator.onLine || err.name === 'TypeError') && (method === 'POST' || method === 'PUT')) {
+                this.queueOfflineRequest(endpoint, options);
+                return { success: true, offline: true, message: 'Saved to offline queue' };
+            }
             throw err;
+        }
+    },
+
+    queueOfflineRequest(endpoint, options) {
+        try {
+            const queue = JSON.parse(localStorage.getItem('smartslate_offline_queue') || '[]');
+            queue.push({ endpoint, options, timestamp: Date.now() });
+            localStorage.setItem('smartslate_offline_queue', JSON.stringify(queue));
+            console.log(`[Offline Queue] Queued ${options.method || 'GET'} request to ${endpoint}`);
+        } catch (e) {
+            console.error('Failed to queue offline request:', e);
+        }
+    },
+
+    async flushOfflineQueue() {
+        try {
+            const queue = JSON.parse(localStorage.getItem('smartslate_offline_queue') || '[]');
+            if (!queue.length) return;
+
+            console.log(`[Offline Queue] Flushing ${queue.length} pending requests...`);
+            localStorage.removeItem('smartslate_offline_queue');
+
+            for (const item of queue) {
+                try {
+                    await this.request(item.endpoint, item.options);
+                } catch (e) {
+                    console.error(`Failed to flush queued request to ${item.endpoint}:`, e);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to process offline queue:', e);
         }
     },
 
@@ -184,10 +222,10 @@ const API = {
         return this.request(`/api/exams/${id}`);
     },
 
-    createExam(class_id, title, questions, duration_minutes) {
+    createExam(class_id, title, questions, duration_minutes, start_time, end_time) {
         return this.request('/api/exams', {
             method: 'POST',
-            body: JSON.stringify({ class_id, title, questions, duration_minutes })
+            body: JSON.stringify({ class_id, title, questions, duration_minutes, start_time, end_time })
         });
     },
 

@@ -93,6 +93,17 @@ router.post('/', authenticateToken, requireRole('teacher'), async (req, res) => 
                     }
                 }
             }
+
+            // Check overall student attendance rate threshold (<75%)
+            const totalRecords = await all("SELECT status FROM attendance WHERE student_id = ?", [record.student_id]);
+            if (totalRecords.length >= 3) {
+                const presentCount = totalRecords.filter(r => r.status === 'present').length;
+                const rate = Math.round((presentCount / totalRecords.length) * 100);
+                if (rate < 75) {
+                    const { sendStudentAlert } = require('../services/alertService');
+                    await sendStudentAlert(req.app, record.student_id, 'attendance', `⚠️ Low Attendance Alert: Attendance rate has dropped to ${rate}% (below 75% threshold)!`);
+                }
+            }
         }
 
         res.json({ message: `Attendance marked successfully for ${records.length} students on ${date}!` });

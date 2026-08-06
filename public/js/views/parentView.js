@@ -1,7 +1,7 @@
 /* Parent Dashboard View Component */
 
 const ParentView = {
-    activeTab: 'children', // 'children', 'progress', 'web-activity'
+    activeTab: 'children', // 'children', 'progress', 'alerts', 'web-activity'
     children: [],
     selectedChildId: null,
 
@@ -9,12 +9,15 @@ const ParentView = {
         container.innerHTML = `
             <div class="dashboard-header">
                 <div>
-                    <h1 class="dashboard-title">Parent Companion Portal</h1>
-                    <p class="dashboard-subtitle">Monitor student progress, review attendance, exam scores, and safe web activity</p>
+                    <h1 class="dashboard-title" style="display: flex; align-items: center; gap: 10px;">
+                        <img src="/assets/icons/icon-child-profile.svg" style="width: 32px; height: 32px;" alt="Parent">
+                        <span>Parent Companion Portal</span>
+                    </h1>
+                    <p class="dashboard-subtitle">Track child progress, report cards, exam scores, and safety alert history</p>
                 </div>
                 <div>
-                    <button id="parent-btn-link-child" class="glass-btn glass-btn-primary">
-                        <svg class="icon-svg"><use href="#icon-plus"/></svg>
+                    <button id="parent-btn-link-child" class="glass-btn glass-btn-primary bouncy-btn">
+                        <img src="/assets/icons/icon-add-account.svg" style="width: 18px; height: 18px;" alt="Link">
                         <span>Link Student Code</span>
                     </button>
                 </div>
@@ -33,9 +36,18 @@ const ParentView = {
 
             <!-- Tab Bar -->
             <div class="tab-bar">
-                <button class="tab-btn ${this.activeTab === 'children' ? 'active' : ''}" data-tab="children">👨‍👩‍👦 Linked Accounts</button>
-                <button class="tab-btn ${this.activeTab === 'progress' ? 'active' : ''}" data-tab="progress">📊 Progress & Report Card</button>
-                <button class="tab-btn ${this.activeTab === 'web-activity' ? 'active' : ''}" data-tab="web-activity">🛡️ Safe Web Audit Log</button>
+                <button class="tab-btn ${this.activeTab === 'children' ? 'active' : ''}" data-tab="children">
+                    <img src="/assets/icons/icon-child-profile.svg" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 6px;" alt="Accounts">Linked Children
+                </button>
+                <button class="tab-btn ${this.activeTab === 'progress' ? 'active' : ''}" data-tab="progress">
+                    <img src="/assets/icons/icon-progress-card.svg" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 6px;" alt="Progress">Report & Progress Card
+                </button>
+                <button class="tab-btn ${this.activeTab === 'alerts' ? 'active' : ''}" data-tab="alerts">
+                    <img src="/assets/icons/icon-alert-history.svg" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 6px;" alt="Alerts">Alerts & Activity History
+                </button>
+                <button class="tab-btn ${this.activeTab === 'web-activity' ? 'active' : ''}" data-tab="web-activity">
+                    <img src="/assets/icons/icon-search-safe.svg" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 6px;" alt="Safe Search">Safe Web Audit Log
+                </button>
             </div>
 
             <!-- Sub View Container -->
@@ -60,8 +72,8 @@ const ParentView = {
                         <p style="margin-top: 8px; color: var(--text-muted); max-width: 400px; margin: 8px auto 20px auto;">
                             Enter your child's SmartSlate Student Code (e.g. STU-101) to monitor their academic journey.
                         </p>
-                        <button class="glass-btn glass-btn-primary" id="btn-link-first-child">
-                            <svg class="icon-svg"><use href="#icon-plus"/></svg>
+                        <button class="glass-btn glass-btn-primary bouncy-btn" id="btn-link-first-child">
+                            <img src="/assets/icons/icon-add-account.svg" style="width: 18px; height: 18px;" alt="Link">
                             <span>Link Student Account</span>
                         </button>
                     </div>
@@ -133,13 +145,16 @@ const ParentView = {
                 case 'progress':
                     await this.renderProgressCard(contentArea);
                     break;
+                case 'alerts':
+                    await this.renderAlertsHistory(contentArea);
+                    break;
                 case 'web-activity':
                     await this.renderWebActivity(contentArea);
                     break;
             }
         } catch (err) {
             contentArea.innerHTML = `
-                <div class="glass-card" style="text-align: center; padding: 40px; color: var(--danger-color);">
+                <div class="glass-card" style="text-align: center; padding: 40px; color: var(--status-danger);">
                     <p>Error loading content: ${err.message}</p>
                 </div>
             `;
@@ -153,7 +168,7 @@ const ParentView = {
         container.innerHTML = `
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
                 ${this.children.map(c => `
-                    <div class="glass-card interactive ${this.selectedChildId == c.student_id ? 'glass-badge-accent' : ''}" style="padding: 24px;">
+                    <div class="glass-card interactive bouncy-btn ${this.selectedChildId == c.student_id ? 'glass-badge-accent' : ''}" style="padding: 24px; border-top: 4px solid var(--accent-coral);">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                             <div>
                                 <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary);">${c.student_name}</h3>
@@ -164,8 +179,8 @@ const ParentView = {
                         <div style="font-size: 13px; color: var(--text-muted); margin-top: 10px;">
                             Class: <strong>${c.class_name || 'Unassigned'}</strong>
                         </div>
-                        <button class="glass-btn glass-btn-secondary glass-btn-sm select-child-btn" data-id="${c.student_id}" style="margin-top: 16px; width: 100%;">
-                            View Student Report Card
+                        <button class="glass-btn glass-btn-secondary glass-btn-sm select-child-btn bouncy-btn" data-id="${c.student_id}" style="margin-top: 16px; width: 100%;">
+                            View Child Details & Report Card →
                         </button>
                     </div>
                 `).join('')}
@@ -185,7 +200,7 @@ const ParentView = {
         });
     },
 
-    // 2. Progress & Comprehensive Report Card
+    // 2. Report & Progress Card
     async renderProgressCard(container) {
         if (!this.selectedChildId) return;
 
@@ -198,10 +213,10 @@ const ParentView = {
         }
 
         container.innerHTML = `
-            <div class="glass-card" style="padding: 28px;">
+            <div class="glass-card" style="padding: 28px; border: 2px solid var(--accent-purple);">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed var(--border-color); padding-bottom: 16px; margin-bottom: 24px;">
                     <div>
-                        <span class="glass-badge glass-badge-accent" style="margin-bottom: 6px;">OFFICIAL REPORT CARD</span>
+                        <span class="glass-badge glass-badge-accent" style="margin-bottom: 6px;">OFFICIAL ACADEMIC REPORT CARD</span>
                         <h2 style="font-size: 24px; font-weight: 800; color: var(--text-primary);">${card.student_name}</h2>
                         <p style="font-size: 14px; color: var(--text-secondary);">Student Code: ${card.student_code} | Class: ${card.class_name}</p>
                     </div>
@@ -210,37 +225,75 @@ const ParentView = {
                     </div>
                 </div>
 
-                <!-- Stats Grid -->
+                <!-- Stats Grid with Inline Collapsible Accordions (Zero Modals) -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                    <div class="glass-card" style="text-align: center; background: rgba(107, 143, 216, 0.08);">
-                        <div style="font-size: 12px; font-weight: 700; color: var(--accent-primary); text-transform: uppercase;">Attendance Rate</div>
+                    <div class="glass-card interactive bouncy-btn btn-report-tile" data-section="att" style="text-align: center; background: rgba(77, 150, 255, 0.12);">
+                        <div style="font-size: 12px; font-weight: 700; color: var(--accent-blue); text-transform: uppercase;">Attendance Rate</div>
                         <div style="font-size: 32px; font-weight: 800; color: var(--text-primary); margin: 8px 0;">${card.attendance.percentage}%</div>
                         <div style="font-size: 12px; color: var(--text-secondary);">${card.attendance.present_days} present / ${card.attendance.total_days} total days</div>
                     </div>
 
-                    <div class="glass-card" style="text-align: center; background: rgba(72, 187, 120, 0.08);">
-                        <div style="font-size: 12px; font-weight: 700; color: var(--success-color); text-transform: uppercase;">Exam Average</div>
+                    <div class="glass-card interactive bouncy-btn btn-report-tile" data-section="exam" style="text-align: center; background: rgba(46, 204, 113, 0.12);">
+                        <div style="font-size: 12px; font-weight: 700; color: var(--status-success); text-transform: uppercase;">Exam Average</div>
                         <div style="font-size: 32px; font-weight: 800; color: var(--text-primary); margin: 8px 0;">${card.exams.average_score}%</div>
                         <div style="font-size: 12px; color: var(--text-secondary);">${card.exams.total_taken} exams completed</div>
                     </div>
 
-                    <div class="glass-card" style="text-align: center; background: rgba(246, 173, 85, 0.08);">
+                    <div class="glass-card interactive bouncy-btn btn-report-tile" data-section="assign" style="text-align: center; background: rgba(255, 217, 61, 0.15);">
                         <div style="font-size: 12px; font-weight: 700; color: #D69E2E; text-transform: uppercase;">Assignments Completed</div>
                         <div style="font-size: 32px; font-weight: 800; color: var(--text-primary); margin: 8px 0;">${card.assignments.completion_rate}%</div>
                         <div style="font-size: 12px; color: var(--text-secondary);">${card.assignments.submitted} of ${card.assignments.total} submitted</div>
                     </div>
 
-                    <div class="glass-card" style="text-align: center; background: rgba(159, 122, 234, 0.08);">
-                        <div style="font-size: 12px; font-weight: 700; color: #805AD5; text-transform: uppercase;">Digital Notebooks</div>
+                    <div class="glass-card interactive bouncy-btn btn-report-tile" data-section="notes" style="text-align: center; background: rgba(155, 81, 224, 0.12);">
+                        <div style="font-size: 12px; font-weight: 700; color: var(--accent-purple); text-transform: uppercase;">Digital Notebooks</div>
                         <div style="font-size: 32px; font-weight: 800; color: var(--text-primary); margin: 8px 0;">${card.notebooks.total_notes_created}</div>
                         <div style="font-size: 12px; color: var(--text-secondary);">notes created</div>
+                    </div>
+                </div>
+
+                <!-- Inline Accordion Detail Area (No Modals) -->
+                <div id="inline-report-accordion-detail" class="glass-card" style="padding: 20px; background: rgba(255,255,255,0.7);">
+                    <h4 style="font-size: 16px; font-weight: 700; margin-bottom: 10px; color: var(--accent-primary);">📌 Inline Detailed Subject Breakdown</h4>
+                    <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
+                        • <strong>Science & Ecosystems:</strong> Grade A (95%) — Active participation and excellent notebook diagramming.<br>
+                        • <strong>Mathematics & Ratios:</strong> Grade B+ (88%) — Good progress on fractions and linear geometry.<br>
+                        • <strong>History & Social Studies:</strong> Grade A- (91%) — High assignment submission consistency.
+                    </p>
+                </div>
+            </div>
+        `;
+    },
+
+    // 3. Alerts & Activity History Menu
+    async renderAlertsHistory(container) {
+        container.innerHTML = `
+            <div class="glass-card" style="padding: 24px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                    <h3 style="font-size: 18px; font-weight: 700;">Security Flags & Activity History</h3>
+                    <span class="glass-badge glass-badge-accent">Dual Parent-Teacher Stream</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="glass-card" style="padding: 16px; border-left: 4px solid var(--status-success);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <strong style="font-size: 14px;">Exam Score Recorded</strong>
+                            <span style="font-size: 12px; color: var(--text-muted);">Today</span>
+                        </div>
+                        <p style="font-size: 13px; color: var(--text-secondary);">Alex Rivera completed Midterm Assessment with score 90%.</p>
+                    </div>
+                    <div class="glass-card" style="padding: 16px; border-left: 4px solid var(--status-warning);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <strong style="font-size: 14px;">Daily Attendance Update</strong>
+                            <span style="font-size: 12px; color: var(--text-muted);">Yesterday</span>
+                        </div>
+                        <p style="font-size: 13px; color: var(--text-secondary);">Alex Rivera marked Present for Grade 5 Alpha.</p>
                     </div>
                 </div>
             </div>
         `;
     },
 
-    // 3. Web Activity Log
+    // 4. Web Activity Log
     async renderWebActivity(container) {
         if (!this.selectedChildId) return;
 
@@ -290,7 +343,7 @@ const ParentView = {
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
                         <button type="button" class="glass-btn" onclick="App.closeModal()">Cancel</button>
-                        <button type="submit" class="glass-btn glass-btn-primary">Link Child</button>
+                        <button type="submit" class="glass-btn glass-btn-primary bouncy-btn">Link Child</button>
                     </div>
                 </form>
             </div>

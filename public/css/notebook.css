@@ -342,6 +342,59 @@
 }
 
 .stylus-canvas.pointer-events-none {
-    pointer-events: none;
+    pointer-events: none !important;
+}
+
+/* Fullscreen Writing Mode for Tablet & Mobile */
+#note-editor-container.fullscreen-note-mode {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 99999 !important;
+    background: var(--paper-bg-primary) !important;
+    padding: 12px !important;
+    overflow-y: auto !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+#note-editor-container.fullscreen-note-mode .glass-card {
+    min-height: 100vh;
+    border-radius: 0;
+    padding: 16px;
+}
+
+#note-editor-container.fullscreen-note-mode .paper-sheet {
+    min-height: calc(100vh - 140px) !important;
+}
+
+/* Fluid Responsiveness for Mobile & Tablet Writing Area */
+@media (max-width: 600px) {
+    .paper-sheet {
+        padding: 28px 12px 20px 40px;
+    }
+
+    .paper-sheet::before {
+        left: 32px;
+    }
+
+    .note-editor-textarea {
+        font-size: 16px;
+        line-height: 32px;
+    }
+
+    .stylus-toolbar {
+        padding: 8px 10px;
+    }
+
+    .stylus-tool-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+        min-height: 40px;
+    }
 }
 

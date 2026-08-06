@@ -21,15 +21,16 @@ const StudentView = {
                 </div>
             </div>
 
-            <!-- Tab Bar -->
+            <!-- Child-Friendly Tab Bar -->
             <div class="tab-bar">
-                <button class="tab-btn ${this.activeTab === 'bookshelf' ? 'active' : ''}" data-tab="bookshelf">📚 Bookshelf</button>
-                <button class="tab-btn ${this.activeTab === 'assignments' ? 'active' : ''}" data-tab="assignments">📝 Assignments</button>
+                <button class="tab-btn ${this.activeTab === 'bookshelf' ? 'active' : ''}" data-tab="bookshelf">📚 My Books</button>
+                <button class="tab-btn ${this.activeTab === 'assignments' ? 'active' : ''}" data-tab="assignments">📝 Homework Tasks</button>
+                <button class="tab-btn ${this.activeTab === 'teacher' ? 'active' : ''}" data-tab="teacher">👩‍🏫 My Teacher</button>
                 <button class="tab-btn ${this.activeTab === 'chat' ? 'active' : ''}" data-tab="chat">💬 Class Chat</button>
-                <button class="tab-btn ${this.activeTab === 'exams' ? 'active' : ''}" data-tab="exams">🎯 Exams</button>
-                <button class="tab-btn ${this.activeTab === 'history' ? 'active' : ''}" data-tab="history">🔍 Past Notes</button>
-                <button class="tab-btn ${this.activeTab === 'search' ? 'active' : ''}" data-tab="search">🌐 Safe Web Search</button>
-                <button class="tab-btn ${this.activeTab === 'attendance' ? 'active' : ''}" data-tab="attendance">📅 Attendance</button>
+                <button class="tab-btn ${this.activeTab === 'exams' ? 'active' : ''}" data-tab="exams">🎯 Quizzes & Exams</button>
+                <button class="tab-btn ${this.activeTab === 'history' ? 'active' : ''}" data-tab="history">🔍 My Past Pages</button>
+                <button class="tab-btn ${this.activeTab === 'search' ? 'active' : ''}" data-tab="search">🌐 Study Search</button>
+                <button class="tab-btn ${this.activeTab === 'attendance' ? 'active' : ''}" data-tab="attendance">📅 My Attendance</button>
             </div>
 
             <!-- Sub View Container -->
@@ -70,6 +71,9 @@ const StudentView = {
                     break;
                 case 'assignments':
                     await this.renderAssignments(contentArea);
+                    break;
+                case 'teacher':
+                    await this.renderMyTeacher(contentArea);
                     break;
                 case 'chat':
                     await this.renderChat(contentArea);
@@ -114,20 +118,16 @@ const StudentView = {
         container.innerHTML = `
             <div class="bookshelf-grid">
                 ${books.map(b => `
-                    <div class="book-container" data-id="${b.id}">
-                        <div class="book-3d">
-                            <div class="book-cover ${b.cover_style || 'blue_linen'}">
-                                <div>
-                                    <span class="book-subject">${b.subject}</span>
-                                    <h3 class="book-title">${b.title}</h3>
-                                </div>
+                    <div class="book-container bouncy-btn" data-id="${b.id}">
+                        <div class="book-cover ${b.cover_style || 'blue_linen'}">
+                            <div class="book-spine"></div>
+                            <div class="book-content">
+                                <span class="glass-badge" style="background: rgba(255,255,255,0.25); color: white; border: none;">${b.subject || 'General'}</span>
+                                <h3 class="book-title">${b.title}</h3>
                                 <div class="book-footer">
-                                    <span>${b.note_count || 0} Notes</span>
-                                    <span>Open 📖</span>
+                                    <span>${b.notes_count || 0} Pages</span>
+                                    <span>Open →</span>
                                 </div>
-                            </div>
-                            <div class="book-pages-stack">
-                                <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">Opening Notebook...</span>
                             </div>
                         </div>
                     </div>
@@ -153,7 +153,7 @@ const StudentView = {
         });
     },
 
-    // Notebook Detail & Notes Editor with 5 Paper Rule Types
+    // Notebook Detail & Notes Editor with 5 Paper Rule Types & Page Choice Prompt
     async renderNotebookDetail(container) {
         if (!this.currentBook) {
             this.activeTab = 'bookshelf';
@@ -167,41 +167,42 @@ const StudentView = {
         const res = await API.getNotes(this.currentBook.id);
         const notes = res.notes || [];
 
+        // Default to first note if not set
+        if (!this.currentNote && notes.length > 0) {
+            this.currentNote = notes[0];
+        }
+
         container.innerHTML = `
-            <div style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
                 <div>
-                    <button id="btn-back-bookshelf" class="glass-btn glass-btn-sm" style="margin-bottom: 8px;">← Back to Bookshelf</button>
-                    <h2 style="font-size: 24px; font-weight: 800;">${this.currentBook.title}</h2>
-                    <span class="glass-badge glass-badge-accent">${this.currentBook.subject}</span>
+                    <button id="btn-back-bookshelf" class="glass-btn glass-btn-sm" style="margin-bottom: 8px;">← Back to My Books</button>
+                    <h2 style="font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 10px;">
+                        <span>${this.currentBook.title}</span>
+                        <span class="glass-badge glass-badge-accent">${this.currentBook.subject}</span>
+                    </h2>
                 </div>
-                <button id="btn-create-note" class="glass-btn glass-btn-primary">
+                <button id="btn-create-note-top" class="glass-btn glass-btn-primary bouncy-btn">
                     <svg class="icon-svg"><use href="#icon-plus"/></svg>
-                    <span>Add New Page</span>
+                    <span>+ Add New Page</span>
                 </button>
             </div>
 
-            <div style="display: grid; grid-template-columns: 280px 1fr; gap: 24px;">
-                <!-- Notes Sidebar List -->
-                <div class="glass-panel" style="padding: 16px; max-height: 620px; overflow-y: auto;">
-                    <div style="font-weight: 700; margin-bottom: 12px; font-size: 14px; color: var(--text-secondary);">PAGES IN THIS BOOK</div>
-                    <div id="notes-sidebar-list">
-                        ${notes.length === 0 ? '<p style="font-size: 13px; color: var(--text-muted);">No pages created yet.</p>' : ''}
-                        ${notes.map(n => `
-                            <div class="glass-card interactive note-sidebar-item ${this.currentNote && this.currentNote.id == n.id ? 'active' : ''}" data-id="${n.id}" style="padding: 12px; margin-bottom: 8px;">
-                                <div style="font-weight: 700; font-size: 15px; margin-bottom: 4px;">${n.title || 'Untitled Note'}</div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted);">
-                                    <span style="text-transform: uppercase;">${n.rule_type}</span>
-                                    <span>${new Date(n.updated_at).toLocaleDateString()}</span>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
+            <!-- TOP PAGES NAVIGATION BAR -->
+            <div class="glass-panel" style="padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; overflow-x: auto; scrollbar-width: none;">
+                <span style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">PAGES (${notes.length}):</span>
+                <div id="top-pages-tab-strip" style="display: flex; align-items: center; gap: 8px; flex: 1;">
+                    ${notes.length === 0 ? '<p style="font-size: 13px; color: var(--text-muted);">No pages created yet. Click "+ Add New Page".</p>' : ''}
+                    ${notes.map((n, idx) => `
+                        <button class="glass-btn glass-btn-sm note-top-tab-item ${this.currentNote && this.currentNote.id == n.id ? 'glass-btn-primary' : 'glass-btn-secondary'}" data-id="${n.id}" style="white-space: nowrap; gap: 6px; touch-action: manipulation;">
+                            <span>📄 Page ${idx + 1}: ${n.title || 'Untitled'}</span>
+                        </button>
+                    `).join('')}
                 </div>
+            </div>
 
-                <!-- Main Note Editor Surface -->
-                <div id="note-editor-container">
-                    ${this.currentNote ? this.renderNoteEditorHTML(this.currentNote) : '<div class="glass-card" style="text-align: center; padding: 60px;"><p style="color: var(--text-secondary);">Select a page from the sidebar or click "Add New Page".</p></div>'}
-                </div>
+            <!-- Full-Width Note Editor Surface -->
+            <div id="note-editor-container" style="width: 100%;">
+                ${this.currentNote ? this.renderNoteEditorHTML(this.currentNote) : '<div class="glass-card" style="text-align: center; padding: 60px;"><p style="color: var(--text-secondary);">Select a page from the top menu or click "Add New Page".</p></div>'}
             </div>
         `;
 
@@ -210,13 +211,48 @@ const StudentView = {
             this.renderTabContent(document.querySelector('#student-tab-content'));
         });
 
-        container.querySelector('#btn-create-note').addEventListener('click', async () => {
-            const newRes = await API.createNote(this.currentBook.id, 'New Page', 'ruled', '');
-            this.currentNote = newRes.note;
-            this.renderNotebookDetail(container);
-        });
+        const showNewPageChoiceModal = () => {
+            App.showModal(`
+                <div class="modal-card" style="max-width: 480px; text-align: center;">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Create New Page</h3>
+                        <button class="modal-close" onclick="App.closeModal()">✕</button>
+                    </div>
+                    <p style="color: var(--text-secondary); margin: 12px 0 20px;">Choose how you want your new page to start:</p>
+                    <div style="display: flex; flex-direction: column; gap: 14px;">
+                        <button id="btn-choice-blank" class="glass-btn glass-btn-primary bouncy-btn" style="padding: 16px; font-weight: 700;">
+                            📄 Start a New Blank Page
+                        </button>
+                        <button id="btn-choice-preserve" class="glass-btn glass-btn-secondary bouncy-btn" style="padding: 16px; font-weight: 700;">
+                            📋 Continue / Preserve Previous Page's Content
+                        </button>
+                    </div>
+                </div>
+            `);
 
-        container.querySelectorAll('.note-sidebar-item').forEach(item => {
+            const modal = document.getElementById('modal-container');
+            modal.querySelector('#btn-choice-blank').addEventListener('click', async () => {
+                App.closeModal();
+                const newRes = await API.createNote(this.currentBook.id, `Page ${notes.length + 1}`, 'ruled', '');
+                this.currentNote = newRes.note;
+                this.renderNotebookDetail(container);
+            });
+
+            modal.querySelector('#btn-choice-preserve').addEventListener('click', async () => {
+                App.closeModal();
+                const prevContent = this.currentNote ? this.currentNote.content : '';
+                const newRes = await API.createNote(this.currentBook.id, `Page ${notes.length + 1}`, this.currentNote ? this.currentNote.rule_type : 'ruled', prevContent);
+                this.currentNote = newRes.note;
+                this.renderNotebookDetail(container);
+            });
+        };
+
+        const createNoteBtn = container.querySelector('#btn-create-note-top');
+        if (createNoteBtn) {
+            createNoteBtn.addEventListener('click', showNewPageChoiceModal);
+        }
+
+        container.querySelectorAll('.note-top-tab-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 const noteId = e.currentTarget.dataset.id;
                 this.currentNote = notes.find(n => n.id == noteId);
@@ -244,12 +280,18 @@ const StudentView = {
         } catch (e) {}
 
         return `
-            <div class="glass-card" style="padding: 20px;">
+            <div class="glass-card" style="padding: 20px; width: 100%;">
                 <!-- Header Toolbar -->
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 12px;">
                     <input type="text" id="note-title-input" class="glass-input" value="${note.title}" style="max-width: 280px; font-weight: 700; font-size: 18px;" placeholder="Page Title...">
 
                     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <!-- Full Screen Writing Mode Toggle -->
+                        <button id="btn-fullscreen-note" class="glass-btn glass-btn-secondary glass-btn-sm" title="Toggle Full Screen Writing Mode">
+                            <svg class="icon-svg"><use href="#icon-menu"/></svg>
+                            <span id="fullscreen-btn-label">Full Screen</span>
+                        </button>
+
                         <!-- 5 Rule Types Selector -->
                         <select id="note-ruletype-select" class="glass-select" style="width: auto;">
                             <option value="ruled" ${note.rule_type === 'ruled' ? 'selected' : ''}>📏 Single Ruled</option>
@@ -273,22 +315,21 @@ const StudentView = {
                 </div>
 
                 <!-- STYLUS / PAINT TOOLBAR -->
-                <div class="stylus-toolbar" style="flex-direction: column; gap: 8px;">
+                <div class="stylus-toolbar" style="flex-direction: column; gap: 8px; width: 100%;">
                     <!-- Row 1: Drawing Tools -->
                     <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; width: 100%;">
                         <span style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; min-width: 40px;">TOOLS</span>
                         <div class="stylus-tool-group">
-                            <button class="stylus-tool-btn active" data-tool="pen" title="Pen">✏️ Pen</button>
+                            <button class="stylus-tool-btn active" data-tool="select" title="Select & Edit Text/Components">👆 Select Text</button>
+                            <button class="stylus-tool-btn" data-tool="pen" title="Pen">✏️ Pen</button>
                             <button class="stylus-tool-btn" data-tool="highlighter" title="Highlighter">🖊️ Highlight</button>
                             <button class="stylus-tool-btn" data-tool="eraser" title="Eraser">🧹 Eraser</button>
-                            <button class="stylus-tool-btn" data-tool="select" title="Marquee Select">⬚ Select</button>
                             <button class="stylus-tool-btn" data-tool="fill" title="Fill / Bucket">🪣 Fill</button>
-                            <button class="stylus-tool-btn" data-tool="text_canvas" title="Text on Canvas">🔤 Text</button>
+                            <button class="stylus-tool-btn" data-tool="text_canvas" title="Text on Canvas">🔤 Canvas Text</button>
                             <button class="stylus-tool-btn" data-tool="line" title="Straight Line">╱ Line</button>
                             <button class="stylus-tool-btn" data-tool="rect" title="Rectangle">▭ Rect</button>
                             <button class="stylus-tool-btn" data-tool="circle" title="Circle/Ellipse">◯ Circle</button>
                             <button class="stylus-tool-btn" data-tool="arrow" title="Arrow">↗ Arrow</button>
-                            <button class="stylus-tool-btn" data-tool="text" title="Keyboard Type Mode">⌨️ Type</button>
                         </div>
                     </div>
                     <!-- Row 2: Colors, Sizes, Actions -->
@@ -319,12 +360,11 @@ const StudentView = {
                         </div>
                     </div>
                 </div>
-                </div>
 
                 <!-- Paper Sheet Container matching chosen Rule Type -->
-                <div id="paper-sheet-element" class="paper-sheet ${note.rule_type}" style="position: relative;">
+                <div id="paper-sheet-element" class="paper-sheet ${note.rule_type}" style="position: relative; width: 100%;">
                     <textarea id="note-content-textarea" class="note-editor-textarea" placeholder="Start writing with your stylus or type notes...">${textContent}</textarea>
-                    <canvas id="stylus-canvas" class="stylus-canvas"></canvas>
+                    <canvas id="stylus-canvas" class="stylus-canvas pointer-events-none"></canvas>
                 </div>
 
                 <!-- Add Page Button - Fixed at bottom center, expands canvas -->
@@ -343,6 +383,25 @@ const StudentView = {
         const ruleSelect = container.querySelector('#note-ruletype-select');
         const contentTextarea = container.querySelector('#note-content-textarea');
         const paperSheet = container.querySelector('#paper-sheet-element');
+
+        // Full Screen Writing Mode Toggle
+        const fullscreenBtn = container.querySelector('#btn-fullscreen-note');
+        const editorContainer = container.querySelector('#note-editor-container');
+        if (fullscreenBtn && editorContainer) {
+            fullscreenBtn.addEventListener('click', () => {
+                const isFullscreen = editorContainer.classList.toggle('fullscreen-note-mode');
+                fullscreenBtn.classList.toggle('glass-btn-primary', isFullscreen);
+                const label = fullscreenBtn.querySelector('#fullscreen-btn-label');
+                if (label) label.textContent = isFullscreen ? 'Exit Full Screen' : 'Full Screen';
+                App.toast(isFullscreen ? 'Entered Full Screen Writing Mode 📺' : 'Exited Full Screen Mode');
+
+                setTimeout(() => {
+                    if (this.initCanvasSizeRef) {
+                        this.initCanvasSizeRef();
+                    }
+                }, 100);
+            });
+        }
 
         // Rule Type change updates CSS background instantly
         ruleSelect.addEventListener('change', (e) => {
@@ -423,10 +482,12 @@ const StudentView = {
         // Canvas must be sized AFTER the DOM paints so getBoundingClientRect is accurate
         const initCanvasSize = () => {
             const paperSheet = canvas.parentElement;
+            if (!paperSheet) return;
             const rect = paperSheet.getBoundingClientRect();
             if (rect.width > 0) {
                 canvas.width = rect.width;
                 canvas.height = Math.max(rect.height, 520);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                 // Load saved drawing after sizing
                 if (this.currentNote && this.currentNote.content && this.currentNote.content.startsWith('{')) {
@@ -447,55 +508,44 @@ const StudentView = {
             }
         };
 
+        this.initCanvasSizeRef = initCanvasSize;
+
         // Use requestAnimationFrame to ensure layout is complete before measuring
         requestAnimationFrame(() => setTimeout(initCanvasSize, 0));
 
-
-        // State variables
+        // State variables — Default to select tool so text can be selected fast
         let isDrawing = false;
-        let tool = 'pen';
+        let tool = 'select';
         let color = '#1A365D';
         let width = 3;
         let lastX = 0, lastY = 0;
         let startX = 0, startY = 0;
         let snapshotBeforeShape = null; // for shape preview
 
-        // Select Tool state
-        let floatingSelection = null;
-        let isDraggingSelection = false;
-        let dragOffsetX = 0, dragOffsetY = 0;
-
-        // Text input helper for text_canvas tool
-        let textInput = null;
-
         // Tool button click
         container.querySelectorAll('.stylus-tool-btn[data-tool]').forEach(btn => {
             btn.addEventListener('click', () => {
-                if (floatingSelection) {
-                    // Commit active selection when switching tools
-                    const ctx = canvas.getContext('2d');
-                    ctx.putImageData(floatingSelection.imgData, floatingSelection.x, floatingSelection.y);
-                    floatingSelection = null;
-                    this.saveCanvasHistory(canvas);
-                    this.triggerAutoSave(container);
-                }
-
                 container.querySelectorAll('.stylus-tool-btn[data-tool]').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 tool = btn.dataset.tool;
 
-                if (tool === 'text') {
-                    // Keyboard typing mode — pass to textarea
+                if (tool === 'select' || tool === 'text') {
+                    // Select Text & Keyboard mode: enable textarea text selection and editing
                     canvas.classList.add('pointer-events-none');
-                    textarea.focus();
+                    if (textarea) {
+                        textarea.style.pointerEvents = 'auto';
+                        textarea.focus();
+                    }
                 } else {
                     canvas.classList.remove('pointer-events-none');
+                    if (textarea) {
+                        textarea.style.pointerEvents = 'none';
+                    }
                 }
 
                 if (tool === 'highlighter') { color = 'rgba(255,235,59,0.5)'; width = 14; }
-                else if (tool === 'eraser') { /* keep color, handled in draw */ }
-                else if (tool === 'fill') { canvas.style.cursor = 'crosshair'; }
-                else if (['line','rect','circle','arrow'].includes(tool)) { canvas.style.cursor = 'crosshair'; }
+                else if (tool === 'eraser') { /* keep color */ }
+                else if (['fill', 'line', 'rect', 'circle', 'arrow'].includes(tool)) { canvas.style.cursor = 'crosshair'; }
                 else { canvas.style.cursor = 'default'; }
             });
         });
@@ -836,7 +886,40 @@ const StudentView = {
         }
     },
 
+    async flushPendingAutoSave(container) {
+        if (this.autoSaveTimer && this.currentNote) {
+            clearTimeout(this.autoSaveTimer);
+            this.autoSaveTimer = null;
+            try {
+                const titleInput = container.querySelector('#note-title-input');
+                const ruleSelect = container.querySelector('#note-ruletype-select');
+                const textInput = container.querySelector('#note-content-textarea');
+                const canvas = container.querySelector('#stylus-canvas');
+
+                if (titleInput && textInput && this.currentNote) {
+                    const title = titleInput.value;
+                    const rule_type = ruleSelect ? ruleSelect.value : 'ruled';
+                    const textContent = textInput.value;
+                    let canvasData = null;
+                    if (canvas && canvas.width > 0 && canvas.height > 0) {
+                        canvasData = canvas.toDataURL('image/png');
+                    }
+                    const contentData = JSON.stringify({
+                        type: 'smartslate_note_v2',
+                        canvasData,
+                        text: textContent
+                    });
+                    await API.updateNote(this.currentNote.id, title, rule_type, contentData);
+                    this.currentNote.content = contentData;
+                }
+            } catch (e) {}
+        }
+    },
+
     triggerAutoSave(container) {
+        if (!this.currentNote) return;
+        const noteIdToSave = this.currentNote.id;
+
         const saveStatus = container.querySelector('#auto-save-status');
         if (saveStatus) {
             saveStatus.textContent = 'Saving...';
@@ -846,10 +929,16 @@ const StudentView = {
         clearTimeout(this.autoSaveTimer);
         this.autoSaveTimer = setTimeout(async () => {
             try {
-                const title = container.querySelector('#note-title-input').value;
-                const rule_type = container.querySelector('#note-ruletype-select').value;
-                const textContent = container.querySelector('#note-content-textarea').value;
+                const titleInput = container.querySelector('#note-title-input');
+                const ruleSelect = container.querySelector('#note-ruletype-select');
+                const textInput = container.querySelector('#note-content-textarea');
                 const canvas = container.querySelector('#stylus-canvas');
+
+                if (!titleInput || !textInput) return;
+
+                const title = titleInput.value;
+                const rule_type = ruleSelect ? ruleSelect.value : 'ruled';
+                const textContent = textInput.value;
 
                 let canvasData = null;
                 if (canvas && canvas.width > 0 && canvas.height > 0) {
@@ -862,10 +951,12 @@ const StudentView = {
                     text: textContent
                 });
 
-                await API.updateNote(this.currentNote.id, title, rule_type, contentData);
-                this.currentNote.title = title;
-                this.currentNote.rule_type = rule_type;
-                this.currentNote.content = contentData;
+                await API.updateNote(noteIdToSave, title, rule_type, contentData);
+                if (this.currentNote && this.currentNote.id === noteIdToSave) {
+                    this.currentNote.title = title;
+                    this.currentNote.rule_type = rule_type;
+                    this.currentNote.content = contentData;
+                }
 
                 if (saveStatus) {
                     saveStatus.textContent = 'Saved ✓';
@@ -1379,38 +1470,66 @@ const StudentView = {
     async renderExams(container) {
         const res = await API.getExams();
         const exams = res.exams || [];
+        const now = new Date();
 
         container.innerHTML = `
             <div class="glass-card" style="margin-bottom: 24px;">
-                <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Exams & Assessments</h3>
-                <p style="color: var(--text-secondary); font-size: 14px;">Take time-boxed tests and get instant feedback</p>
+                <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Exams & Strict Assessments</h3>
+                <p style="color: var(--text-secondary); font-size: 14px;">Time-limited strict exams with live countdown timer, start/end access windows, and full-screen anti-cheat protection</p>
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
                 ${exams.length === 0 ? '<div class="glass-card" style="grid-column: 1/-1; text-align: center; padding: 40px;">No exams scheduled.</div>' : ''}
-                ${exams.map(e => `
-                    <div class="glass-card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
-                        <div>
-                            <span class="glass-badge glass-badge-accent" style="margin-bottom: 8px;">⏱️ ${e.duration_minutes} Mins</span>
-                            <h4 style="font-size: 18px; font-weight: 700; margin-top: 4px;">${e.title}</h4>
-                        </div>
-                        <div style="margin-top: 20px;">
-                            ${e.result_id ? `
-                                <div style="padding: 10px; background: rgba(82, 154, 114, 0.12); border-radius: var(--radius-sm); color: var(--status-success); font-weight: 700; text-align: center;">
-                                    Completed: ${e.score} / ${e.total_points} (${Math.round((e.score/e.total_points)*100)}%)
+                ${exams.map(e => {
+                    const isStarted = !e.start_time || now >= new Date(e.start_time);
+                    const isEnded = e.end_time && now > new Date(e.end_time);
+                    let statusBadge = '';
+                    let canStart = false;
+
+                    if (e.result_id) {
+                        statusBadge = `<div style="padding: 10px; background: rgba(82, 154, 114, 0.12); border-radius: var(--radius-sm); color: var(--status-success); font-weight: 700; text-align: center;">Completed: ${e.score} / ${e.total_points} (${Math.round((e.score/e.total_points)*100)}%)</div>`;
+                    } else if (isEnded) {
+                        statusBadge = `<div style="padding: 10px; background: rgba(231, 76, 60, 0.12); border-radius: var(--radius-sm); color: var(--status-danger); font-weight: 700; text-align: center;">Exam Closed (Ended at ${new Date(e.end_time).toLocaleTimeString()})</div>`;
+                    } else if (!isStarted) {
+                        statusBadge = `<div style="padding: 10px; background: rgba(243, 156, 18, 0.12); border-radius: var(--radius-sm); color: var(--status-warning); font-weight: 700; text-align: center;">Upcoming (Opens at ${new Date(e.start_time).toLocaleString()})</div>`;
+                    } else {
+                        canStart = true;
+                    }
+
+                    return `
+                        <div class="glass-card bouncy-btn" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between; border-top: 4px solid var(--accent-coral);">
+                            <div>
+                                <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+                                    <span class="glass-badge glass-badge-accent" style="display: inline-flex; align-items: center; gap: 4px;">
+                                        <img src="/assets/icons/icon-timer.svg" style="width: 14px; height: 14px;" alt="Timer"> ${e.duration_minutes} Mins
+                                    </span>
+                                    <span class="glass-badge glass-badge-warning" style="display: inline-flex; align-items: center; gap: 4px;">
+                                        <img src="/assets/icons/icon-strict-mode.svg" style="width: 14px; height: 14px;" alt="Strict"> Strict Fullscreen
+                                    </span>
                                 </div>
-                            ` : `
-                                <button class="glass-btn glass-btn-primary btn-take-exam" data-id="${e.id}" style="width: 100%;">Start Exam</button>
-                            `}
+                                <h4 style="font-size: 18px; font-weight: 700; margin-top: 4px;">${e.title}</h4>
+                                ${e.start_time ? `<div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Window: ${new Date(e.start_time).toLocaleDateString()} ${new Date(e.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} – ${new Date(e.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>` : ''}
+                            </div>
+                            <div style="margin-top: 20px;">
+                                ${canStart ? `
+                                    <button class="glass-btn glass-btn-primary btn-take-exam bouncy-btn" data-id="${e.id}" style="width: 100%;">Start Exam Now</button>
+                                ` : statusBadge}
+                            </div>
                         </div>
-                    </div>
-                `).join('')}
+                    `;
+                }).join('')}
             </div>
         `;
 
         container.querySelectorAll('.btn-take-exam').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.currentTarget.dataset.id;
+                // Request browser full screen
+                try {
+                    if (document.documentElement.requestFullscreen) {
+                        await document.documentElement.requestFullscreen();
+                    }
+                } catch (err) {}
                 this.startExamSession(container, id);
             });
         });
@@ -1424,37 +1543,83 @@ const StudentView = {
         let currentQ = 0;
         const answers = {};
 
+        // Timer calculation
+        let secondsLeft = (exam.duration_minutes || 20) * 60;
+        let timerInterval = null;
+
+        // Strict lockdown violation handler
+        const handleLockdownViolation = async (reason) => {
+            App.toast(`🚨 Strict Mode Alert: ${reason}`, 'danger');
+            try {
+                await API.post(`/api/exams/${examId}/fraud-alert`, { reason });
+            } catch (err) {}
+        };
+
+        const onBlur = () => handleLockdownViolation('Window lost focus during strict exam mode!');
+        const onVisibilityChange = () => {
+            if (document.hidden) handleLockdownViolation('Switched tabs during strict exam mode!');
+        };
+
+        window.addEventListener('blur', onBlur);
+        document.addEventListener('visibilitychange', onVisibilityChange);
+
+        const stopLockdown = () => {
+            if (timerInterval) clearInterval(timerInterval);
+            window.removeEventListener('blur', onBlur);
+            document.removeEventListener('visibilitychange', onVisibilityChange);
+            try {
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                }
+            } catch (e) {}
+        };
+
         const renderQuestion = () => {
             const q = questions[currentQ];
+            const mins = Math.floor(secondsLeft / 60);
+            const secs = secondsLeft % 60;
+            const timeStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
             container.innerHTML = `
-                <div class="glass-card" style="max-width: 680px; margin: 0 auto; padding: 32px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
-                        <span style="font-weight: 700; font-size: 18px;">${exam.title}</span>
-                        <span class="glass-badge glass-badge-warning">Question ${currentQ + 1} of ${questions.length}</span>
-                    </div>
-
-                    <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 20px;">${q.text}</h3>
-
-                    ${q.type === 'mcq' ? `
-                        <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px;">
-                            ${q.options.map(opt => `
-                                <label class="glass-card interactive" style="padding: 14px 18px; display: flex; align-items: center; gap: 12px; cursor: pointer;">
-                                    <input type="radio" name="mcq-option" value="${opt}" ${answers[q.id] === opt ? 'checked' : ''}>
-                                    <span style="font-size: 16px; font-weight: 600;">${opt}</span>
-                                </label>
-                            `).join('')}
+                <div class="fullscreen-exam-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 99999; background: var(--paper-bg-primary); padding: 32px; overflow-y: auto;">
+                    <div class="glass-card" style="max-width: 720px; margin: 0 auto; padding: 32px; border: 2px solid var(--accent-coral);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                            <div>
+                                <span style="font-weight: 800; font-size: 20px;">${exam.title}</span>
+                                <div style="font-size: 12px; color: var(--status-danger); font-weight: 700; margin-top: 2px;">🔒 FULL-TAB STRICT LOCKDOWN MODE ACTIVE</div>
+                            </div>
+                            <div class="glass-badge glass-badge-danger" style="font-size: 18px; padding: 8px 16px; font-weight: 800;">
+                                ⏳ ${timeStr}
+                            </div>
                         </div>
-                    ` : `
-                        <textarea id="short-answer-input" class="glass-textarea" style="min-height: 120px; margin-bottom: 28px;" placeholder="Type your answer here...">${answers[q.id] || ''}</textarea>
-                    `}
 
-                    <div style="display: flex; justify-content: space-between;">
-                        <button id="btn-prev-q" class="glass-btn" ${currentQ === 0 ? 'disabled' : ''}>Previous</button>
-                        ${currentQ === questions.length - 1 ? `
-                            <button id="btn-submit-exam" class="glass-btn glass-btn-primary">Submit Exam</button>
+                        <div style="margin-bottom: 16px;">
+                            <span class="glass-badge glass-badge-warning">Question ${currentQ + 1} of ${questions.length}</span>
+                        </div>
+
+                        <h3 style="font-size: 22px; font-weight: 700; margin-bottom: 24px; color: var(--text-primary);">${q.text}</h3>
+
+                        ${q.type === 'mcq' ? `
+                            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px;">
+                                ${(q.options || []).map(opt => `
+                                    <label class="glass-card interactive" style="padding: 16px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                                        <input type="radio" name="mcq-option" value="${opt}" ${answers[q.id] === opt ? 'checked' : ''}>
+                                        <span style="font-size: 16px; font-weight: 600;">${opt}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
                         ` : `
-                            <button id="btn-next-q" class="glass-btn glass-btn-primary">Next Question →</button>
+                            <textarea id="short-answer-input" class="glass-textarea" style="min-height: 120px; margin-bottom: 28px;" placeholder="Type your answer here...">${answers[q.id] || ''}</textarea>
                         `}
+
+                        <div style="display: flex; justify-content: space-between;">
+                            <button id="btn-prev-q" class="glass-btn" ${currentQ === 0 ? 'disabled' : ''}>Previous</button>
+                            ${currentQ === questions.length - 1 ? `
+                                <button id="btn-submit-exam" class="glass-btn glass-btn-primary bouncy-btn" style="padding: 12px 28px; font-weight: 700;">Submit Exam</button>
+                            ` : `
+                                <button id="btn-next-q" class="glass-btn glass-btn-primary bouncy-btn" style="padding: 12px 28px; font-weight: 700;">Next Question →</button>
+                            `}
+                        </div>
                     </div>
                 </div>
             `;
@@ -1477,15 +1642,32 @@ const StudentView = {
 
             const submitBtn = container.querySelector('#btn-submit-exam');
             if (submitBtn) submitBtn.addEventListener('click', async () => {
+                stopLockdown();
                 try {
                     const result = await API.submitExam(examId, answers);
-                    App.showToast(`Exam completed! Score: ${result.percentage}%`);
+                    App.showToast(`Exam completed! Score: ${result.percentage}% 🎉`, 'success');
                     this.renderExams(container);
                 } catch (err) {
                     App.showToast(err.message, 'danger');
                 }
             });
         };
+
+        // Start Live Timer Interval
+        timerInterval = setInterval(() => {
+            secondsLeft--;
+            const timerBadge = container.querySelector('.glass-badge-danger');
+            if (timerBadge) {
+                const mins = Math.floor(secondsLeft / 60);
+                const secs = secondsLeft % 60;
+                timerBadge.textContent = `⏳ ${mins}:${secs < 10 ? '0' : ''}${secs}`;
+            }
+            if (secondsLeft <= 0) {
+                stopLockdown();
+                App.toast('Time is up! Submitting exam automatically.', 'warning');
+                API.submitExam(examId, answers).then(() => this.renderExams(container));
+            }
+        }, 1000);
 
         renderQuestion();
     },
@@ -1798,6 +1980,54 @@ const StudentView = {
                 setTimeout(() => overlay.remove(), 300);
             }
         }, 10000);
+    },
+
+    // 8.9 My Teacher Section
+    async renderMyTeacher(container) {
+        let teacherInfo = { name: 'Prof. Sarah Lin', email: 'teacher@smartslate.local', className: 'Grade 5 Alpha', code: 'CLASS-101' };
+        try {
+            const meRes = await API.get('/api/auth/me');
+            if (meRes.user && meRes.user.class_name) {
+                teacherInfo.className = meRes.user.class_name;
+            }
+        } catch(e) {}
+
+        container.innerHTML = `
+            <div class="glass-card" style="padding: 28px; margin-bottom: 24px; border-top: 4px solid var(--accent-blue);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+                    <div style="display: flex; gap: 20px; align-items: center;">
+                        <div style="font-size: 64px;">👩‍🏫</div>
+                        <div>
+                            <span class="glass-badge glass-badge-accent" style="margin-bottom: 6px;">CLASS TEACHER</span>
+                            <h2 style="font-size: 24px; font-weight: 800; color: var(--text-primary); margin-top: 2px;">${teacherInfo.name}</h2>
+                            <p style="color: var(--text-secondary); font-size: 14px; margin-top: 4px;">Class: <strong>${teacherInfo.className}</strong> | Email: ${teacherInfo.email}</p>
+                        </div>
+                    </div>
+                    <button id="btn-chat-with-teacher" class="glass-btn glass-btn-primary bouncy-btn" style="padding: 12px 24px;">
+                        <img src="/assets/icons/icon-chat-teacher.svg" style="width: 20px; height: 20px;" alt="Chat">
+                        <span>Send Direct Message</span>
+                    </button>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                <div class="glass-card" style="padding: 20px;">
+                    <h4 style="font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--accent-primary);">📢 Class Announcements</h4>
+                    <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">"Welcome students! Please make sure to complete your Science assignment on Plant Ecosystems by Friday."</p>
+                </div>
+
+                <div class="glass-card" style="padding: 20px;">
+                    <h4 style="font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--status-success);">⏰ Teacher Office Hours</h4>
+                    <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">Monday & Wednesday: 3:00 PM – 4:30 PM<br>Ask questions via Direct Chat or during class.</p>
+                </div>
+            </div>
+        `;
+
+        container.querySelector('#btn-chat-with-teacher').addEventListener('click', () => {
+            this.activeTab = 'chat';
+            document.querySelectorAll('.tab-bar .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === 'chat'));
+            this.renderTabContent(document.querySelector('#student-tab-content'));
+        });
     },
 
     // 8.8 Attendance View

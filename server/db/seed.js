@@ -5,7 +5,10 @@ async function seed() {
     console.log('Seeding SmartSlate database...');
     await initDb();
 
-    const hashedPassword = await bcrypt.hash('password123', 10);
+    const hashedPassword = await bcrypt.hash('1234', 10);
+
+    // Update existing users' PIN to 1234
+    await run("UPDATE users SET password_hash = ?", [hashedPassword]);
 
     // 1. Create Teacher
     const existingTeacher = await get("SELECT * FROM users WHERE email = 'teacher@smartslate.local'");

@@ -11,6 +11,9 @@ const db = new sqlite3.Database(dbPath, (err) => {
     } else {
         console.log('Connected to SQLite database at:', dbPath);
         db.run('PRAGMA foreign_keys = ON;');
+        db.run('PRAGMA journal_mode = WAL;');
+        db.run('PRAGMA synchronous = NORMAL;');
+        db.run('PRAGMA busy_timeout = 5000;');
     }
 });
 
@@ -50,6 +53,9 @@ function initDb() {
                 console.error('Failed to initialize database schema:', err);
                 return reject(err);
             }
+            // Auto-migrate new columns for exams table
+            db.run("ALTER TABLE exams ADD COLUMN start_time DATETIME", () => {});
+            db.run("ALTER TABLE exams ADD COLUMN end_time DATETIME", () => {});
             console.log('Database schema initialized successfully.');
             resolve();
         });
