@@ -484,19 +484,30 @@ const StudentView = {
             const paperSheet = canvas.parentElement;
             if (!paperSheet) return;
             const rect = paperSheet.getBoundingClientRect();
-            if (rect.width > 0) {
-                canvas.width = rect.width;
-                canvas.height = Math.max(rect.height, 520);
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const textarea = container.querySelector('#note-content-textarea');
 
-                // Load saved drawing after sizing
+            if (rect.width > 0) {
+                let savedHeight = 520;
+
+                // Load saved drawing & height after sizing
                 if (this.currentNote && this.currentNote.content && this.currentNote.content.startsWith('{')) {
                     try {
                         const parsed = JSON.parse(this.currentNote.content);
+                        if (parsed.canvasHeight && parsed.canvasHeight > savedHeight) {
+                            savedHeight = parsed.canvasHeight;
+                        }
+
                         if (parsed.canvasData) {
                             const img = new Image();
                             img.onload = () => {
-                                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                                const finalHeight = Math.max(rect.height, savedHeight, img.naturalHeight || 520);
+                                canvas.width = rect.width;
+                                canvas.height = finalHeight;
+                                paperSheet.style.minHeight = finalHeight + 'px';
+                                if (textarea) textarea.style.minHeight = finalHeight + 'px';
+
+                                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                ctx.drawImage(img, 0, 0); // 1:1 ratio painting prevents compression and overlapping
                                 this.saveCanvasHistory(canvas);
                             };
                             img.src = parsed.canvasData;
@@ -504,6 +515,13 @@ const StudentView = {
                         }
                     } catch (e) {}
                 }
+
+                const finalHeight = Math.max(rect.height, savedHeight);
+                canvas.width = rect.width;
+                canvas.height = finalHeight;
+                paperSheet.style.minHeight = finalHeight + 'px';
+                if (textarea) textarea.style.minHeight = finalHeight + 'px';
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
                 this.saveCanvasHistory(canvas);
             }
         };
@@ -906,6 +924,8 @@ const StudentView = {
                     }
                     const contentData = JSON.stringify({
                         type: 'smartslate_note_v2',
+                        canvasWidth: canvas ? canvas.width : null,
+                        canvasHeight: canvas ? canvas.height : null,
                         canvasData,
                         text: textContent
                     });
@@ -947,6 +967,8 @@ const StudentView = {
 
                 const contentData = JSON.stringify({
                     type: 'smartslate_note_v2',
+                    canvasWidth: canvas ? canvas.width : null,
+                    canvasHeight: canvas ? canvas.height : null,
                     canvasData,
                     text: textContent
                 });
