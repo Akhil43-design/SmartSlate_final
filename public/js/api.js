@@ -94,6 +94,13 @@ const API = {
         });
     },
 
+    loginByPin(pin) {
+        return this.request('/api/auth/login-by-pin', {
+            method: 'POST',
+            body: JSON.stringify({ pin })
+        });
+    },
+
     signup(name, role, email, password) {
         return this.request('/api/auth/signup', {
             method: 'POST',

@@ -18,16 +18,16 @@ SmartSlate builds on a warm paper background surface (`--paper-bg-primary: #F7F6
 
 ---
 
-## 🔑 Demo Lock Screen Accounts & PIN-Only Authentication
+## 🔑 Direct PIN-Only Lock Screen & Demo Accounts
 
-On first launch, SmartSlate displays the dynamic Lock Screen account selector. Select any tile and enter PIN `1234`:
+On launch, SmartSlate displays a direct 4-digit PIN unlock keypad. Enter any user's unique PIN to immediately unlock their dashboard:
 
-| Avatar | Name | Role | Email | PIN (4-Digit) | Student Code |
+| Avatar | Name | Role | Email | Unique PIN | Student Code |
 |---|---|---|---|---|---|
-| 👨‍🎓 | **Alex Rivera** | Student | `student@smartslate.local` | `1234` | `STU-101` |
-| 👩‍🎓 | **Maya Patel** | Student | `maya@smartslate.local` | `1234` | `STU-102` |
-| 👩‍🏫 | **Prof. Sarah Lin** | Teacher | `teacher@smartslate.local` | `1234` | N/A |
-| 👨‍👩‍👦 | **Robert Rivera** | Parent | `parent@smartslate.local` | `1234` | N/A (Linked to STU-101) |
+| 👨‍🎓 | **Alex Rivera** | Student | `student@smartslate.local` | `1111` | `STU-101` |
+| 👩‍🎓 | **Maya Patel** | Student | `maya@smartslate.local` | `2222` | `STU-102` |
+| 👩‍🏫 | **Prof. Sarah Lin** | Teacher | `teacher@smartslate.local` | `3333` | N/A |
+| 👨‍👩‍👦 | **Robert Rivera** | Parent | `parent@smartslate.local` | `4444` | N/A (Linked to STU-101) |
 
 ---
 

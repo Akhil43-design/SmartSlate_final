@@ -47,6 +47,15 @@ router.post('/signup', authRateLimiter, async (req, res) => {
             return res.status(400).json({ error: 'An account with this email address already exists.' });
         }
 
+        // Check unique PIN / password across all users
+        const { all } = require('../db/database');
+        const allUsers = await all("SELECT id, password_hash FROM users");
+        for (const u of allUsers) {
+            if (await bcrypt.compare(password, u.password_hash)) {
+                return res.status(400).json({ error: 'This PIN / Password is already in use by another account. Please try a different password.' });
+            }
+        }
+
         const password_hash = await bcrypt.hash(password, 10);
         let studentCode = null;
 
@@ -103,40 +112,94 @@ router.post('/signup', authRateLimiter, async (req, res) => {
     }
 });
 
-// Login
-router.post('/login', authRateLimiter, async (req, res) => {
+// Direct PIN Matching Login Endpoint (No Account Selection Required)
+router.post('/login-by-pin', authRateLimiter, async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { pin, password } = req.body;
+        const targetPin = pin || password;
 
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Please enter both email and password.' });
+        if (!targetPin) {
+            return res.status(400).json({ error: 'Please enter your 4-digit PIN.' });
         }
 
-        const user = await get("SELECT * FROM users WHERE email = ?", [email.toLowerCase().trim()]);
-        if (!user) {
-            return res.status(401).json({ error: 'Invalid email or password.' });
+        const { all } = require('../db/database');
+        const users = await all("SELECT * FROM users");
+        let matchedUser = null;
+
+        for (const user of users) {
+            const isValid = await bcrypt.compare(targetPin, user.password_hash);
+            if (isValid) {
+                matchedUser = user;
+                break;
+            }
         }
 
-        const passwordValid = await bcrypt.compare(password, user.password_hash);
-        if (!passwordValid) {
-            return res.status(401).json({ error: 'Invalid email or password.' });
+        if (!matchedUser) {
+            return res.status(401).json({ error: 'Invalid PIN. No matching account found. Try a different PIN.' });
         }
 
         const userData = {
-            id: user.id,
-            name: user.name,
-            role: user.role,
-            email: user.email,
-            student_code: user.student_code
+            id: matchedUser.id,
+            name: matchedUser.name,
+            role: matchedUser.role,
+            email: matchedUser.email,
+            student_code: matchedUser.student_code
         };
 
         const token = generateToken(userData);
 
         res.json({
-            message: 'Logged in successfully!',
+            message: `Logged in successfully! Welcome, ${userData.name}!`,
             token,
             user: userData
         });
+    } catch (err) {
+        console.error('Direct PIN login error:', err);
+        res.status(500).json({ error: 'Internal server error during PIN login.' });
+    }
+});
+
+// Login (Supports both Email+PIN and Direct PIN matching)
+router.post('/login', authRateLimiter, async (req, res) => {
+    try {
+        const { email, password, pin } = req.body;
+        const targetPin = pin || password;
+
+        if (email) {
+            const user = await get("SELECT * FROM users WHERE email = ?", [email.toLowerCase().trim()]);
+            if (user && targetPin && await bcrypt.compare(targetPin, user.password_hash)) {
+                const userData = {
+                    id: user.id,
+                    name: user.name,
+                    role: user.role,
+                    email: user.email,
+                    student_code: user.student_code
+                };
+                const token = generateToken(userData);
+                return res.json({ message: 'Logged in successfully!', token, user: userData });
+            }
+        }
+
+        // Direct PIN fallback matching
+        if (targetPin) {
+            const { all } = require('../db/database');
+            const users = await all("SELECT * FROM users");
+            for (const user of users) {
+                if (await bcrypt.compare(targetPin, user.password_hash)) {
+                    const userData = {
+                        id: user.id,
+                        name: user.name,
+                        role: user.role,
+                        email: user.email,
+                        student_code: user.student_code
+                    };
+                    const token = generateToken(userData);
+                    return res.json({ message: 'Logged in successfully!', token, user: userData });
+                }
+            }
+        }
+
+        return res.status(401).json({ error: 'Invalid PIN. No matching account found.' });
     } catch (err) {
         console.error('Login error:', err);
         res.status(500).json({ error: 'Internal server error during login.' });

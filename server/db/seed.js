@@ -2,26 +2,27 @@ const bcrypt = require('bcryptjs');
 const { initDb, run, get } = require('./database');
 
 async function seed() {
-    console.log('Seeding SmartSlate database...');
+    console.log('Seeding SmartSlate database with unique demo PINs...');
     await initDb();
 
-    const hashedPassword = await bcrypt.hash('1234', 10);
+    const pinStudent1 = await bcrypt.hash('1111', 10);
+    const pinStudent2 = await bcrypt.hash('2222', 10);
+    const pinTeacher = await bcrypt.hash('3333', 10);
+    const pinParent = await bcrypt.hash('4444', 10);
 
-    // Update existing users' PIN to 1234
-    await run("UPDATE users SET password_hash = ?", [hashedPassword]);
-
-    // 1. Create Teacher
+    // 1. Create Teacher (Prof. Sarah Lin - PIN: 3333)
     const existingTeacher = await get("SELECT * FROM users WHERE email = 'teacher@smartslate.local'");
     let teacherUserId;
     if (!existingTeacher) {
         const res = await run(
             "INSERT INTO users (name, role, email, password_hash) VALUES (?, ?, ?, ?)",
-            ['Prof. Sarah Lin', 'teacher', 'teacher@smartslate.local', hashedPassword]
+            ['Prof. Sarah Lin', 'teacher', 'teacher@smartslate.local', pinTeacher]
         );
         teacherUserId = res.id;
         await run("INSERT INTO teachers (user_id) VALUES (?)", [teacherUserId]);
     } else {
         teacherUserId = existingTeacher.id;
+        await run("UPDATE users SET password_hash = ? WHERE id = ?", [pinTeacher, teacherUserId]);
     }
 
     // 2. Create Class
@@ -37,13 +38,13 @@ async function seed() {
         classId = existingClass.id;
     }
 
-    // 3. Create Student 1 (Alex Rivera)
+    // 3. Create Student 1 (Alex Rivera - PIN: 1111)
     const existingStudent1 = await get("SELECT * FROM users WHERE email = 'student@smartslate.local'");
     let student1UserId, student1Id;
     if (!existingStudent1) {
         const res = await run(
             "INSERT INTO users (name, role, email, password_hash, student_code) VALUES (?, ?, ?, ?, ?)",
-            ['Alex Rivera', 'student', 'student@smartslate.local', hashedPassword, 'STU-101']
+            ['Alex Rivera', 'student', 'student@smartslate.local', pinStudent1, 'STU-101']
         );
         student1UserId = res.id;
         const sRes = await run(
@@ -53,17 +54,18 @@ async function seed() {
         student1Id = sRes.id;
     } else {
         student1UserId = existingStudent1.id;
+        await run("UPDATE users SET password_hash = ? WHERE id = ?", [pinStudent1, student1UserId]);
         const s = await get("SELECT * FROM students WHERE user_id = ?", [student1UserId]);
         student1Id = s.id;
     }
 
-    // 4. Create Student 2 (Maya Patel)
+    // 4. Create Student 2 (Maya Patel - PIN: 2222)
     const existingStudent2 = await get("SELECT * FROM users WHERE email = 'maya@smartslate.local'");
     let student2UserId, student2Id;
     if (!existingStudent2) {
         const res = await run(
             "INSERT INTO users (name, role, email, password_hash, student_code) VALUES (?, ?, ?, ?, ?)",
-            ['Maya Patel', 'student', 'maya@smartslate.local', hashedPassword, 'STU-102']
+            ['Maya Patel', 'student', 'maya@smartslate.local', pinStudent2, 'STU-102']
         );
         student2UserId = res.id;
         const sRes = await run(
@@ -73,21 +75,23 @@ async function seed() {
         student2Id = sRes.id;
     } else {
         student2UserId = existingStudent2.id;
+        await run("UPDATE users SET password_hash = ? WHERE id = ?", [pinStudent2, student2UserId]);
         const s = await get("SELECT * FROM students WHERE user_id = ?", [student2UserId]);
         student2Id = s.id;
     }
 
-    // 5. Create Parent (Robert Rivera) & Link to Alex Rivera
+    // 5. Create Parent (Robert Rivera - PIN: 4444) & Link to Alex Rivera
     const existingParent = await get("SELECT * FROM users WHERE email = 'parent@smartslate.local'");
     let parentUserId;
     if (!existingParent) {
         const res = await run(
             "INSERT INTO users (name, role, email, password_hash) VALUES (?, ?, ?, ?)",
-            ['Robert Rivera', 'parent', 'parent@smartslate.local', hashedPassword]
+            ['Robert Rivera', 'parent', 'parent@smartslate.local', pinParent]
         );
         parentUserId = res.id;
     } else {
         parentUserId = existingParent.id;
+        await run("UPDATE users SET password_hash = ? WHERE id = ?", [pinParent, parentUserId]);
     }
 
     const existingLink = await get("SELECT * FROM parent_links WHERE parent_user_id = ? AND student_id = ?", [parentUserId, student1Id]);
@@ -231,7 +235,7 @@ async function seed() {
         await run("INSERT INTO web_activity (student_id, query) VALUES (?, ?)", [student1Id, 'ancient silk road map and history']);
     }
 
-    console.log('Database seeding complete successfully!');
+    console.log('Database seeding completed successfully with unique demo PINs!');
 }
 
 if (require.main === module) {
