@@ -1082,13 +1082,18 @@ const StudentView = {
         }
 
         App.showModal(`
-            <div class="modal-card" style="max-width: 900px; width: 95vw; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-card" id="hw-workspace-modal-card" style="max-width: 900px; width: 95vw; max-height: 90vh; overflow-y: auto; transition: all 250ms ease;">
                 <div class="modal-header">
                     <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
                         <img src="/assets/icons/icon-assignment.svg" style="width: 24px; height: 24px;" alt="HW">
                         <span>Notebook Workspace: ${assignment.title}</span>
                     </h3>
-                    <button class="modal-close" onclick="App.closeModal()">✕</button>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button id="btn-toggle-hw-fullscreen" class="glass-btn glass-btn-sm bouncy-btn" title="Toggle Full Screen Mode">
+                            <span>🖥️ Full Screen</span>
+                        </button>
+                        <button class="modal-close" onclick="App.closeModal()">✕</button>
+                    </div>
                 </div>
 
                 <div style="margin: 12px 0 20px; padding: 14px; background: var(--accent-light); border-radius: var(--radius-sm); border-left: 4px solid var(--accent-blue);">
@@ -1097,7 +1102,7 @@ const StudentView = {
                 </div>
 
                 <!-- Full Stylus & Text Notebook Editor Surface -->
-                <div style="width: 100%;">
+                <div style="width: 100%; flex: 1; display: flex; flex-direction: column;">
                     <div class="stylus-toolbar" style="flex-direction: column; gap: 8px; margin-bottom: 12px;">
                         <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; width: 100%;">
                             <span style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">TOOLS:</span>
@@ -1132,7 +1137,7 @@ const StudentView = {
                         </div>
                     </div>
 
-                    <div class="paper-sheet ruled" style="position: relative; min-height: 380px; margin-bottom: 20px;">
+                    <div class="paper-sheet ruled" style="position: relative; min-height: 380px; flex: 1; margin-bottom: 20px;">
                         <textarea id="assign-text-${assignment.id}" class="note-editor-textarea" placeholder="Type your homework response..." style="min-height: 360px;">${existingText}</textarea>
                         <canvas id="assign-canvas-${assignment.id}" class="stylus-canvas"></canvas>
                     </div>
@@ -1149,6 +1154,30 @@ const StudentView = {
 
         const modal = document.getElementById('modal-container');
         this.initAssignmentCanvas(modal, assignment.id, assignment.submission_content);
+
+        // Full Screen Mode Toggle Button Listener
+        const fullscreenBtn = modal.querySelector('#btn-toggle-hw-fullscreen');
+        const modalCard = modal.querySelector('#hw-workspace-modal-card');
+        if (fullscreenBtn && modalCard) {
+            fullscreenBtn.addEventListener('click', () => {
+                const isFS = modalCard.classList.toggle('fullscreen-hw-mode');
+                if (isFS) {
+                    modalCard.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; max-width: 100vw; max-height: 100vh; border-radius: 0; z-index: 99999; margin: 0; padding: 24px; display: flex; flex-direction: column; justify-content: space-between; background: var(--paper-bg-primary);';
+                    fullscreenBtn.innerHTML = '<span>🗗 Exit Full Screen</span>';
+                    fullscreenBtn.classList.add('glass-btn-primary');
+                    if (document.documentElement.requestFullscreen) {
+                        document.documentElement.requestFullscreen().catch(() => {});
+                    }
+                } else {
+                    modalCard.style.cssText = 'max-width: 900px; width: 95vw; max-height: 90vh; overflow-y: auto; transition: all 250ms ease;';
+                    fullscreenBtn.innerHTML = '<span>🖥️ Full Screen</span>';
+                    fullscreenBtn.classList.remove('glass-btn-primary');
+                    if (document.exitFullscreen && document.fullscreenElement) {
+                        document.exitFullscreen().catch(() => {});
+                    }
+                }
+            });
+        }
 
         modal.querySelector('#btn-submit-hw-modal').addEventListener('click', async () => {
             const textContent = modal.querySelector(`#assign-text-${assignment.id}`)?.value || '';
