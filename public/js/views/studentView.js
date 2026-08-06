@@ -1175,33 +1175,6 @@ const StudentView = {
         });
     },
 
-        // Initialize mini stylus canvases for each assignment
-        assignments.forEach(a => {
-            this.initAssignmentCanvas(container, a.id, a.submission_content);
-        });
-
-        container.querySelectorAll('.btn-submit-assignment').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const id = e.currentTarget.dataset.id;
-                const textContent = container.querySelector(`#assign-text-${id}`)?.value || '';
-                const canvas = container.querySelector(`#assign-canvas-${id}`);
-                let canvasData = null;
-                if (canvas && canvas.width > 0 && canvas.height > 0) {
-                    canvasData = canvas.toDataURL('image/png');
-                }
-                const contentData = JSON.stringify({ type: 'smartslate_note_v2', canvasData, text: textContent });
-                
-                try {
-                    await API.submitAssignment(id, contentData);
-                    App.toast('Assignment submitted!', 'success');
-                    this.renderAssignments(container); // Refresh to show status
-                } catch (err) {
-                    App.toast('Error submitting assignment', 'danger');
-                }
-            });
-        });
-    },
-
     initAssignmentCanvas(container, assignId, savedContent) {
         const canvas = container.querySelector(`#assign-canvas-${assignId}`);
         const textarea = container.querySelector(`#assign-text-${assignId}`);
