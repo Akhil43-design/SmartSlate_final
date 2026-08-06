@@ -71,73 +71,138 @@
 /* Glass Top Navigation Bar */
 .top-navbar {
     position: sticky;
-    top: 12px;
-    left: 0;
-    right: 0;
-    margin: 12px 20px 0 20px;
-    height: 68px;
-    padding: 0 24px;
+    top: 0;
+    z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    z-index: 500;
+    padding: 10px 24px;
+    height: 72px;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
 }
 
 .nav-brand {
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 20px;
-    font-weight: 800;
-    color: var(--text-primary);
     cursor: pointer;
+    user-select: none;
 }
 
 .nav-logo-icon {
-    width: 38px;
-    height: 38px;
-    background: var(--accent-primary);
-    color: #FFFFFF;
-    border-radius: var(--radius-md);
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 4px 14px rgba(77, 150, 255, 0.35);
+    transition: transform var(--transition-fast);
+}
+
+.nav-brand:hover .nav-logo-icon {
+    transform: scale(1.06) rotate(-3deg);
 }
 
 .nav-links {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.03);
+    padding: 5px;
+    border-radius: var(--radius-pill);
+    border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
-.nav-link {
+.nav-link-btn {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 16px;
-    border-radius: var(--radius-sm);
-    font-size: 15px;
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    font-size: 14px;
     font-weight: 600;
     color: var(--text-secondary);
-    text-decoration: none;
+    background: transparent;
+    border: 1px solid transparent;
     cursor: pointer;
     transition: all var(--transition-fast);
+    white-space: nowrap;
 }
 
-.nav-link:hover {
+.nav-link-btn:hover {
     color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.6);
 }
 
-.nav-link.active {
-    color: var(--accent-primary);
-    background: var(--accent-light);
+.nav-link-btn.active {
+    color: var(--accent-blue);
+    background: #FFFFFF;
+    border-color: rgba(77, 150, 255, 0.25);
+    box-shadow: 0 2px 10px rgba(77, 150, 255, 0.15);
+    font-weight: 700;
+}
+
+.nav-link-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    transition: transform var(--transition-fast);
+}
+
+.nav-link-btn:hover .nav-link-icon,
+.nav-link-btn.active .nav-link-icon {
+    transform: scale(1.12);
 }
 
 .nav-user-controls {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 10px;
+}
+
+.nav-control-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--glass-shadow);
+    transition: all var(--transition-fast);
+}
+
+.nav-control-btn:hover {
+    background: #FFFFFF;
+    transform: translateY(-2px);
+    box-shadow: var(--glass-shadow-hover);
+}
+
+.nav-profile-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 14px 6px 8px;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--glass-shadow);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.nav-profile-pill:hover {
+    background: #FFFFFF;
+    box-shadow: var(--glass-shadow-hover);
+    transform: translateY(-1px);
 }
 
 /* Notification Dropdown Container */

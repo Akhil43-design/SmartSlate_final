@@ -211,12 +211,24 @@ const App = {
         if (bottomNav) {
             bottomNav.style.display = 'flex';
         }
-        this.renderNavbarLinks();
 
-        const userDisplayName = document.getElementById('user-display-name');
-        if (userDisplayName && this.currentUser) {
-            userDisplayName.textContent = `${this.currentUser.name} (${this.currentUser.role})`;
+        if (this.currentUser) {
+            const userDisplayName = document.getElementById('user-display-name');
+            const userDisplayRole = document.getElementById('user-display-role');
+            const userRoleAvatar = document.getElementById('user-role-avatar');
+            const roleTagline = document.getElementById('nav-role-tagline');
+
+            if (userDisplayName) userDisplayName.textContent = this.currentUser.name;
+            if (userDisplayRole) userDisplayRole.textContent = this.currentUser.role;
+            if (userRoleAvatar) {
+                userRoleAvatar.textContent = this.currentUser.role === 'student' ? '👨‍🎓' : this.currentUser.role === 'teacher' ? '👩‍🏫' : '👨‍👩‍👦';
+            }
+            if (roleTagline) {
+                roleTagline.textContent = this.currentUser.role === 'student' ? 'Child OS' : this.currentUser.role === 'teacher' ? 'Teacher Portal' : 'Parent Companion';
+            }
         }
+
+        this.renderNavbarLinks();
 
         switch (viewName) {
             case 'student':
@@ -241,6 +253,7 @@ const App = {
                 break;
             default:
                 this.render404View();
+                break;
         }
     },
 
@@ -249,7 +262,7 @@ const App = {
         studentContainer.style.display = 'block';
         studentContainer.innerHTML = `
             <div class="glass-card" style="text-align: center; padding: 60px 20px; max-width: 500px; margin: 40px auto;">
-                <svg class="icon-svg icon-svg-xl" style="color: var(--status-warning); margin-bottom: 16px;"><use href="#icon-book"/></svg>
+                <img src="/assets/icons/icon-error-warning.svg" style="width: 48px; height: 48px; margin-bottom: 16px;" alt="404">
                 <h2>Page Not Found</h2>
                 <p style="color: var(--text-secondary); margin: 12px 0 24px 0;">The page or section you requested is not available.</p>
                 <button class="glass-btn glass-btn-primary" onclick="App.navigateTo('${this.currentUser ? this.currentUser.role : 'auth'}')">Return to Dashboard</button>
@@ -268,31 +281,51 @@ const App = {
 
         if (role === 'student') {
             links = [
-                { id: 'student', label: 'Dashboard', icon: 'home' }
+                { view: 'student', tab: 'books', label: 'My Books', icon: '/assets/icons/icon-bookshelf.svg' },
+                { view: 'student', tab: 'assignments', label: 'Tasks', icon: '/assets/icons/icon-assignment.svg' },
+                { view: 'student', tab: 'teacher', label: 'My Teacher', icon: '/assets/icons/icon-chat-teacher.svg' },
+                { view: 'student', tab: 'exams', label: 'Exams', icon: '/assets/icons/icon-exam.svg' },
+                { view: 'student', tab: 'attendance', label: 'Attendance', icon: '/assets/icons/icon-attendance-chart.svg' }
             ];
         } else if (role === 'teacher') {
             links = [
-                { id: 'teacher', label: 'Portal', icon: 'assignment' }
+                { view: 'teacher', tab: 'overview', label: 'Roster & Attendance', icon: '/assets/icons/icon-student-table.svg' },
+                { view: 'teacher', tab: 'assignments', label: 'Assignments', icon: '/assets/icons/icon-assignment.svg' },
+                { view: 'teacher', tab: 'exams', label: 'Exams', icon: '/assets/icons/icon-exam.svg' },
+                { view: 'teacher', tab: 'announcements', label: 'Announcements', icon: '/assets/icons/icon-chat-group.svg' }
             ];
         } else if (role === 'parent') {
             links = [
-                { id: 'parent', label: 'Companion', icon: 'user' }
+                { view: 'parent', tab: 'overview', label: 'Report Card', icon: '/assets/icons/icon-progress-card.svg' },
+                { view: 'parent', tab: 'attendance', label: 'Attendance', icon: '/assets/icons/icon-attendance-chart.svg' },
+                { view: 'parent', tab: 'alerts', label: 'Alerts', icon: '/assets/icons/icon-notification-bell.svg' }
             ];
         }
 
-        links.push({ id: 'settings', label: 'Settings', icon: 'settings' });
-
         if (navContainer) {
-            navContainer.innerHTML = links.map(link => `
-                <button class="glass-btn glass-btn-sm ${this.currentView === link.id ? 'active' : ''}" data-view="${link.id}">
-                    <svg class="icon-svg"><use href="#icon-${link.icon}"/></svg>
-                    <span>${link.label}</span>
-                </button>
-            `).join('');
+            navContainer.innerHTML = links.map(link => {
+                let isActive = false;
+                if (role === 'student' && StudentView.activeTab === link.tab) isActive = true;
+                if (role === 'teacher' && TeacherView.activeTab === link.tab) isActive = true;
+                if (role === 'parent' && ParentView.activeTab === link.tab) isActive = true;
+
+                return `
+                    <button class="nav-link-btn bouncy-btn ${isActive ? 'active' : ''}" data-view="${link.view}" data-tab="${link.tab}">
+                        <img src="${link.icon}" class="nav-link-icon" alt="${link.label}">
+                        <span>${link.label}</span>
+                    </button>
+                `;
+            }).join('');
 
             navContainer.querySelectorAll('button').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const targetView = e.currentTarget.dataset.view;
+                    const targetTab = e.currentTarget.dataset.tab;
+
+                    if (role === 'student') StudentView.activeTab = targetTab;
+                    if (role === 'teacher') TeacherView.activeTab = targetTab;
+                    if (role === 'parent') ParentView.activeTab = targetTab;
+
                     this.navigateTo(targetView);
                 });
             });
@@ -300,8 +333,8 @@ const App = {
 
         if (drawerContainer) {
             drawerContainer.innerHTML = links.map(link => `
-                <button class="glass-btn ${this.currentView === link.id ? 'glass-btn-primary' : ''}" data-view="${link.id}" style="width: 100%; justify-content: flex-start;">
-                    <svg class="icon-svg"><use href="#icon-${link.icon}"/></svg>
+                <button class="glass-btn bouncy-btn" data-view="${link.view}" data-tab="${link.tab}" style="width: 100%; justify-content: flex-start; gap: 12px; margin-bottom: 8px;">
+                    <img src="${link.icon}" style="width: 20px; height: 20px;" alt="${link.label}">
                     <span>${link.label}</span>
                 </button>
             `).join('');
@@ -309,6 +342,12 @@ const App = {
             drawerContainer.querySelectorAll('button').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const targetView = e.currentTarget.dataset.view;
+                    const targetTab = e.currentTarget.dataset.tab;
+
+                    if (role === 'student') StudentView.activeTab = targetTab;
+                    if (role === 'teacher') TeacherView.activeTab = targetTab;
+                    if (role === 'parent') ParentView.activeTab = targetTab;
+
                     this.navigateTo(targetView);
                 });
             });
