@@ -172,13 +172,16 @@ const StudentView = {
             this.currentNote = notes[0];
         }
 
+        const activePageIndex = notes.findIndex(n => n.id == (this.currentNote ? this.currentNote.id : 0)) + 1 || (notes.length > 0 ? 1 : 0);
+
         container.innerHTML = `
             <div style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
                 <div>
                     <button id="btn-back-bookshelf" class="glass-btn glass-btn-sm" style="margin-bottom: 8px;">← Back to My Books</button>
-                    <h2 style="font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 10px;">
+                    <h2 style="font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                         <span>${this.currentBook.title}</span>
                         <span class="glass-badge glass-badge-accent">${this.currentBook.subject}</span>
+                        <span id="note-page-number-badge" class="glass-badge glass-badge-success" style="font-size: 13px; font-weight: 700; border-color: rgba(46, 204, 113, 0.3);">Page ${activePageIndex} of ${notes.length || 1}</span>
                     </h2>
                 </div>
                 <button id="btn-create-note-top" class="glass-btn glass-btn-primary bouncy-btn">
@@ -994,94 +997,183 @@ const StudentView = {
     },
 
     // 8.2 Assignments Section
+    // 8.2 Homework Tasks Section (Clean Summary Cards + Dedicated Notebook Workspace)
     async renderAssignments(container) {
         const res = await API.getAssignments();
         const assignments = res.assignments || [];
 
         container.innerHTML = `
-            <div class="glass-card" style="margin-bottom: 24px;">
-                <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Class Assignments</h3>
-                <p style="color: var(--text-secondary); font-size: 14px;">Review homework and submit your answers directly inside SmartSlate</p>
+            <div class="glass-card" style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                <div>
+                    <h3 style="font-size: 22px; font-weight: 800; color: var(--text-primary);">📝 Homework Tasks</h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-top: 4px;">Click any task card to open the notebook workspace, write your notes, and submit to your teacher.</p>
+                </div>
+                <span class="glass-badge glass-badge-accent" style="font-size: 14px; font-weight: 700; padding: 6px 16px;">${assignments.length} Tasks Assigned</span>
             </div>
 
-            <div style="display: flex; flex-direction: column; gap: 16px;">
-                ${assignments.length === 0 ? '<div class="glass-card" style="text-align: center; padding: 40px; color: var(--text-muted);">No active assignments found.</div>' : ''}
-                ${assignments.map(a => `
-                    <div class="glass-card" style="padding: 24px;">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                            <div>
-                                <h4 style="font-size: 18px; font-weight: 700;">${a.title}</h4>
-                                <span class="glass-badge glass-badge-accent" style="margin-top: 4px;">Due: ${new Date(a.due_at).toLocaleDateString()}</span>
-                            </div>
-                            <span class="glass-badge ${a.submission_status === 'submitted' || a.submission_status === 'graded' ? 'glass-badge-success' : 'glass-badge-warning'}">
-                                ${a.submission_status === 'graded' ? 'Graded ✓' : a.submission_status === 'submitted' ? 'Submitted ✓' : 'Not Started'}
-                            </span>
-                        </div>
-                        <p style="color: var(--text-secondary); font-size: 15px; margin-bottom: 16px;">${a.description || 'No additional instructions provided.'}</p>
+            <div style="display: flex; flex-direction: column; gap: 18px;">
+                ${assignments.length === 0 ? '<div class="glass-card" style="text-align: center; padding: 48px; color: var(--text-muted);">🎉 All caught up! No pending homework tasks.</div>' : ''}
+                ${assignments.map(a => {
+                    const isSubmitted = a.submission_status === 'submitted' || a.submission_status === 'graded';
+                    let submittedText = '';
+                    try {
+                        const parsed = JSON.parse(a.submission_content || '{}');
+                        submittedText = parsed.text || a.submission_content || '';
+                    } catch (e) {
+                        submittedText = a.submission_content || '';
+                    }
 
-                        ${a.grade ? `<div style="padding: 10px 14px; background: rgba(82, 154, 114, 0.12); border-radius: var(--radius-sm); color: var(--status-success); font-weight: 700; margin-bottom: 16px;">Grade: ${a.grade}</div>` : ''}
-
-                        <div>
-                            <!-- STYLUS / PAINT TOOLBAR for Assignments -->
-                            <div class="stylus-toolbar" style="flex-direction: column; gap: 8px; margin-bottom: 10px;">
-                                <!-- Row 1: Drawing Tools -->
-                                <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; width: 100%;">
-                                    <span style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; min-width: 40px;">TOOLS</span>
-                                    <div class="stylus-tool-group">
-                                        <button class="stylus-tool-btn active assign-tool-btn" data-tool="pen" data-for="${a.id}" title="Pen">✏️ Pen</button>
-                                        <button class="stylus-tool-btn assign-tool-btn" data-tool="highlighter" data-for="${a.id}" title="Highlighter">🖊️ Highlight</button>
-                                        <button class="stylus-tool-btn assign-tool-btn" data-tool="eraser" data-for="${a.id}" title="Eraser">🧹 Eraser</button>
-                                        <button class="stylus-tool-btn assign-tool-btn" data-tool="select" data-for="${a.id}" title="Marquee Select">⬚ Select</button>
-                                        <button class="stylus-tool-btn assign-tool-btn" data-tool="fill" data-for="${a.id}" title="Fill / Bucket">🪣 Fill</button>
-                                        <button class="stylus-tool-btn assign-tool-btn" data-tool="text_canvas" data-for="${a.id}" title="Text on Canvas">🔤 Text</button>
-                                        <button class="stylus-tool-btn assign-tool-btn" data-tool="line" data-for="${a.id}" title="Straight Line">╱ Line</button>
-                                        <button class="stylus-tool-btn assign-tool-btn" data-tool="rect" data-for="${a.id}" title="Rectangle">▭ Rect</button>
-                                        <button class="stylus-tool-btn assign-tool-btn" data-tool="circle" data-for="${a.id}" title="Circle/Ellipse">◯ Circle</button>
-                                        <button class="stylus-tool-btn assign-tool-btn" data-tool="arrow" data-for="${a.id}" title="Arrow">↗ Arrow</button>
-                                        <button class="stylus-tool-btn assign-tool-btn" data-tool="text" data-for="${a.id}" title="Keyboard Type Mode">⌨️ Type</button>
+                    return `
+                        <div class="glass-card homework-summary-card" style="padding: 24px; border-left: 6px solid ${isSubmitted ? 'var(--status-success)' : 'var(--accent-blue)'};">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+                                <div>
+                                    <h4 style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;">${a.title}</h4>
+                                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                        <span class="glass-badge glass-badge-accent">Due: ${new Date(a.due_at).toLocaleDateString()}</span>
+                                        <span class="glass-badge" style="background: rgba(0,0,0,0.05);">Teacher: ${a.teacher_name || 'Prof. Sarah Lin'}</span>
                                     </div>
                                 </div>
-                                <!-- Row 2: Colors, Sizes, Actions -->
-                                <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; width: 100%;">
-                                    <div class="stylus-tool-group">
-                                        <span style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">INK</span>
-                                        <div class="color-swatch active assign-color" data-color="#1A365D" data-for="${a.id}" style="background: #1A365D;" title="Navy Ink"></div>
-                                        <div class="color-swatch assign-color" data-color="#1A202C" data-for="${a.id}" style="background: #1A202C;" title="Pencil Black"></div>
-                                        <div class="color-swatch assign-color" data-color="#E53E3E" data-for="${a.id}" style="background: #E53E3E;" title="Red Pen"></div>
-                                        <div class="color-swatch assign-color" data-color="#2F855A" data-for="${a.id}" style="background: #2F855A;" title="Green Pen"></div>
-                                        <div class="color-swatch assign-color" data-color="#3182CE" data-for="${a.id}" style="background: #3182CE;" title="Blue Pen"></div>
-                                        <div class="color-swatch assign-color" data-color="#805AD5" data-for="${a.id}" style="background: #805AD5;" title="Purple"></div>
-                                        <div class="color-swatch assign-color" data-color="#DD6B20" data-for="${a.id}" style="background: #DD6B20;" title="Orange"></div>
-                                        <div class="color-swatch assign-color" data-color="#FFFFFF" data-for="${a.id}" style="background: #FFFFFF; border: 1px solid #ccc;" title="White (Eraser-paint)"></div>
-                                        <div class="color-swatch assign-color" data-color="rgba(255,235,59,0.5)" data-for="${a.id}" style="background: #ECC94B;" title="Yellow Highlight"></div>
-                                    </div>
-                                    <div class="stylus-tool-group">
-                                        <span style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">SIZE</span>
-                                        <button class="stroke-size-btn" data-size="1.5" data-for="${a.id}" title="Fine">1</button>
-                                        <button class="stroke-size-btn active" data-size="3" data-for="${a.id}" title="Medium">2</button>
-                                        <button class="stroke-size-btn" data-size="6" data-for="${a.id}" title="Bold">3</button>
-                                        <button class="stroke-size-btn" data-size="14" data-for="${a.id}" title="Broad">4</button>
-                                    </div>
-                                    <div class="stylus-tool-group">
-                                        <button class="stylus-tool-btn assign-undo-btn" data-for="${a.id}" title="Undo">↩️ Undo</button>
-                                        <button class="stylus-tool-btn assign-redo-btn" data-for="${a.id}" title="Redo">↪️ Redo</button>
-                                        <button class="stylus-tool-btn assign-clear-btn" data-for="${a.id}" style="color: var(--status-danger);" title="Clear All Ink">🧼 Clear</button>
-                                    </div>
-                                </div>
+                                <span class="glass-badge ${isSubmitted ? 'glass-badge-success' : 'glass-badge-warning'}" style="font-size: 13px; font-weight: 700; padding: 6px 14px;">
+                                    ${a.submission_status === 'graded' ? 'Graded ✓' : isSubmitted ? 'Submitted ✓' : '⏳ Pending'}
+                                </span>
                             </div>
-                            <!-- Canvas + optional typed text -->
-                            <div class="paper-sheet plain" style="position: relative; min-height: 260px; margin-bottom: 12px;">
-                                <textarea id="assign-text-${a.id}" class="note-editor-textarea" placeholder="Type or draw your answer..." style="min-height: 240px;">${(()=>{ try { const p=JSON.parse(a.submission_content||''); return p.text||''; } catch(e){ return a.submission_content||''; }})()}</textarea>
-                                <canvas id="assign-canvas-${a.id}" class="stylus-canvas"></canvas>
+
+                            <p style="color: var(--text-secondary); font-size: 15px; margin-bottom: 18px; line-height: 1.5;">${a.description || 'No additional instructions provided.'}</p>
+
+                            ${a.grade ? `<div style="padding: 10px 14px; background: rgba(82, 154, 114, 0.12); border-radius: var(--radius-sm); color: var(--status-success); font-weight: 700; margin-bottom: 16px; display: inline-block;">Grade & Remarks: ${a.grade}</div>` : ''}
+
+                            ${isSubmitted && submittedText ? `
+                                <details style="margin-bottom: 16px; background: rgba(0,0,0,0.02); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                                    <summary style="font-size: 13px; font-weight: 700; cursor: pointer; color: var(--accent-blue);">👁️ View Submitted Notes Response</summary>
+                                    <p style="margin-top: 10px; font-size: 14px; color: var(--text-primary); white-space: pre-wrap;">${submittedText}</p>
+                                </details>
+                            ` : ''}
+
+                            <div style="display: flex; gap: 12px;">
+                                <button class="glass-btn ${isSubmitted ? 'glass-btn-secondary' : 'glass-btn-primary'} bouncy-btn btn-open-hw-workspace" data-id="${a.id}" style="padding: 12px 20px; font-weight: 700;">
+                                    <img src="/assets/icons/icon-assignment.svg" style="width: 20px; height: 20px;" alt="Edit">
+                                    <span>${isSubmitted ? '✏️ View & Edit Notebook Response' : '✏️ Open Notebook to Write & Submit'}</span>
+                                </button>
                             </div>
-                            <button class="glass-btn glass-btn-primary btn-submit-assignment" data-id="${a.id}" style="margin-top: 4px;">
-                                ${a.submission_status ? 'Update Submission' : 'Submit Assignment'}
-                            </button>
                         </div>
-                    </div>
-                `).join('')}
+                    `;
+                }).join('')}
             </div>
         `;
+
+        container.querySelectorAll('.btn-open-hw-workspace').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const assignId = e.currentTarget.dataset.id;
+                const assignObj = assignments.find(a => a.id == assignId);
+                this.showHomeworkWorkspaceModal(container, assignObj);
+            });
+        });
+    },
+
+    showHomeworkWorkspaceModal(container, assignment) {
+        let existingText = '';
+        if (assignment.submission_content) {
+            try {
+                const parsed = JSON.parse(assignment.submission_content);
+                existingText = parsed.text || '';
+            } catch (e) {
+                existingText = assignment.submission_content;
+            }
+        }
+
+        App.showModal(`
+            <div class="modal-card" style="max-width: 900px; width: 95vw; max-height: 90vh; overflow-y: auto;">
+                <div class="modal-header">
+                    <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+                        <img src="/assets/icons/icon-assignment.svg" style="width: 24px; height: 24px;" alt="HW">
+                        <span>Notebook Workspace: ${assignment.title}</span>
+                    </h3>
+                    <button class="modal-close" onclick="App.closeModal()">✕</button>
+                </div>
+
+                <div style="margin: 12px 0 20px; padding: 14px; background: var(--accent-light); border-radius: var(--radius-sm); border-left: 4px solid var(--accent-blue);">
+                    <div style="font-size: 12px; font-weight: 800; color: var(--accent-blue); text-transform: uppercase; margin-bottom: 4px;">Teacher Instructions:</div>
+                    <div style="font-size: 15px; color: var(--text-primary);">${assignment.description || 'Complete the assignment notes below.'}</div>
+                </div>
+
+                <!-- Full Stylus & Text Notebook Editor Surface -->
+                <div style="width: 100%;">
+                    <div class="stylus-toolbar" style="flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; width: 100%;">
+                            <span style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">TOOLS:</span>
+                            <div class="stylus-tool-group">
+                                <button class="stylus-tool-btn active assign-tool-btn" data-tool="pen" data-for="${assignment.id}" title="Pen">✏️ Pen</button>
+                                <button class="stylus-tool-btn assign-tool-btn" data-tool="highlighter" data-for="${assignment.id}" title="Highlighter">🖊️ Highlight</button>
+                                <button class="stylus-tool-btn assign-tool-btn" data-tool="eraser" data-for="${assignment.id}" title="Eraser">🧹 Eraser</button>
+                                <button class="stylus-tool-btn assign-tool-btn" data-tool="select" data-for="${assignment.id}" title="Select">⬚ Select</button>
+                                <button class="stylus-tool-btn assign-tool-btn" data-tool="fill" data-for="${assignment.id}" title="Fill">🪣 Fill</button>
+                                <button class="stylus-tool-btn assign-tool-btn" data-tool="text_canvas" data-for="${assignment.id}" title="Text">🔤 Text</button>
+                                <button class="stylus-tool-btn assign-tool-btn" data-tool="line" data-for="${assignment.id}" title="Line">╱ Line</button>
+                                <button class="stylus-tool-btn assign-tool-btn" data-tool="rect" data-for="${assignment.id}" title="Rect">▭ Rect</button>
+                                <button class="stylus-tool-btn assign-tool-btn" data-tool="circle" data-for="${assignment.id}" title="Circle">◯ Circle</button>
+                                <button class="stylus-tool-btn assign-tool-btn" data-tool="arrow" data-for="${assignment.id}" title="Arrow">↗ Arrow</button>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; width: 100%;">
+                            <div class="stylus-tool-group">
+                                <span style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">INK:</span>
+                                <div class="color-swatch active assign-color" data-color="#1A365D" data-for="${assignment.id}" style="background: #1A365D;"></div>
+                                <div class="color-swatch assign-color" data-color="#1A202C" data-for="${assignment.id}" style="background: #1A202C;"></div>
+                                <div class="color-swatch assign-color" data-color="#E53E3E" data-for="${assignment.id}" style="background: #E53E3E;"></div>
+                                <div class="color-swatch assign-color" data-color="#2F855A" data-for="${assignment.id}" style="background: #2F855A;"></div>
+                                <div class="color-swatch assign-color" data-color="#3182CE" data-for="${assignment.id}" style="background: #3182CE;"></div>
+                                <div class="color-swatch assign-color" data-color="rgba(255,235,59,0.5)" data-for="${assignment.id}" style="background: #ECC94B;"></div>
+                            </div>
+                            <div class="stylus-tool-group">
+                                <button class="stylus-tool-btn assign-undo-btn" data-for="${assignment.id}">↩️ Undo</button>
+                                <button class="stylus-tool-btn assign-redo-btn" data-for="${assignment.id}">↪️ Redo</button>
+                                <button class="stylus-tool-btn assign-clear-btn" data-for="${assignment.id}" style="color: var(--status-danger);">🧼 Clear</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="paper-sheet ruled" style="position: relative; min-height: 380px; margin-bottom: 20px;">
+                        <textarea id="assign-text-${assignment.id}" class="note-editor-textarea" placeholder="Type your homework response..." style="min-height: 360px;">${existingText}</textarea>
+                        <canvas id="assign-canvas-${assignment.id}" class="stylus-canvas"></canvas>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                    <button class="glass-btn glass-btn-secondary" onclick="App.closeModal()">Cancel</button>
+                    <button id="btn-submit-hw-modal" class="glass-btn glass-btn-primary bouncy-btn" style="padding: 14px 28px; font-weight: 800;">
+                        🚀 Submit Homework to Teacher
+                    </button>
+                </div>
+            </div>
+        `);
+
+        const modal = document.getElementById('modal-container');
+        this.initAssignmentCanvas(modal, assignment.id, assignment.submission_content);
+
+        modal.querySelector('#btn-submit-hw-modal').addEventListener('click', async () => {
+            const textContent = modal.querySelector(`#assign-text-${assignment.id}`)?.value || '';
+            const canvas = modal.querySelector(`#assign-canvas-${assignment.id}`);
+            let canvasData = null;
+            if (canvas && canvas.width > 0 && canvas.height > 0) {
+                canvasData = canvas.toDataURL('image/png');
+            }
+            const contentData = JSON.stringify({
+                type: 'smartslate_note_v2',
+                canvasHeight: canvas ? canvas.height : 380,
+                canvasData,
+                text: textContent
+            });
+
+            try {
+                await API.submitAssignment(assignment.id, contentData);
+                App.closeModal();
+                App.toast('Homework submitted successfully to your teacher! 🎉', 'success');
+                this.renderAssignments(container);
+            } catch (err) {
+                App.toast(err.message || 'Error submitting homework', 'danger');
+            }
+        });
+    },
 
         // Initialize mini stylus canvases for each assignment
         assignments.forEach(a => {
