@@ -1,20 +1,25 @@
 {
-  "name": "smartslate",
-  "version": "1.0.0",
-  "description": "SmartSlate - Custom OS-style web application for Students, Teachers, and Parents",
-  "main": "server/server.js",
-  "type": "commonjs",
+  "name": "smartslate-platform",
+  "version": "2.0.0",
+  "description": "SmartSlate Platform - Offline-First Student OS for Raspberry Pi & Cloud Parent/Teacher Web Portal",
+  "main": "student/server/server.js",
   "scripts": {
-    "start": "node server/server.js",
-    "dev": "node server/server.js",
-    "seed": "node server/db/seed.js"
+    "student": "node student/server/server.js",
+    "parent-teacher": "node parent-teacher/server/server.js",
+    "dev:student": "node student/server/server.js",
+    "dev:parent-teacher": "node parent-teacher/server/server.js",
+    "seed:student": "node student/server/db/seed.js",
+    "seed:parent-teacher": "node parent-teacher/server/db/seed.js",
+    "seed": "npm run seed:student && npm run seed:parent-teacher",
+    "start": "npm run student"
   },
   "keywords": [
-    "raspberry-pi",
     "smartslate",
+    "raspberry-pi",
+    "offline-first",
     "kiosk",
-    "education",
-    "digital-notebook"
+    "student-os",
+    "vercel"
   ],
   "author": "SmartSlate Team",
   "license": "MIT",
