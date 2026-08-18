@@ -1,11 +1,121 @@
 const bcrypt = require('bcryptjs');
 const defaultDb = require('./database');
 
+async function upsertUser(dbInst, user) {
+    const existing = await dbInst.get(
+        "SELECT id, password_hash FROM users WHERE email = ? OR (firebase_uid IS NOT NULL AND firebase_uid = ?)",
+        [user.email, user.firebase_uid]
+    ).catch(() => null);
+
+    if (existing) {
+        await dbInst.run(
+            `UPDATE users SET
+                name = COALESCE(?, name),
+                role = COALESCE(?, role),
+                password_hash = COALESCE(password_hash, ?),
+                teacher_code = COALESCE(?, teacher_code),
+                student_code = COALESCE(?, student_code),
+                parent_code = COALESCE(?, parent_code),
+                subject = COALESCE(?, subject),
+                firebase_uid = COALESCE(?, firebase_uid)
+            WHERE id = ?`,
+            [
+                user.name,
+                user.role,
+                user.password_hash,
+                user.teacher_code || null,
+                user.student_code || null,
+                user.parent_code || null,
+                user.subject || null,
+                user.firebase_uid || null,
+                existing.id
+            ]
+        );
+        return existing.id;
+    } else {
+        const res = await dbInst.run(
+            `INSERT INTO users (name, role, email, password_hash, teacher_code, student_code, parent_code, subject, firebase_uid)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                user.name,
+                user.role,
+                user.email,
+                user.password_hash,
+                user.teacher_code || null,
+                user.student_code || null,
+                user.parent_code || null,
+                user.subject || null,
+                user.firebase_uid || null
+            ]
+        );
+        return res.id;
+    }
+}
+
+async function upsertTeacher(dbInst, teacher) {
+    const existing = await dbInst.get(
+        "SELECT id FROM teachers WHERE user_id = ? OR teacher_code = ?",
+        [teacher.user_id, teacher.teacher_code]
+    ).catch(() => null);
+
+    if (existing) {
+        await dbInst.run(
+            "UPDATE teachers SET teacher_code = COALESCE(?, teacher_code), subject = COALESCE(?, subject), firebase_uid = COALESCE(?, firebase_uid) WHERE id = ?",
+            [teacher.teacher_code, teacher.subject, teacher.firebase_uid, existing.id]
+        );
+        return existing.id;
+    } else {
+        const res = await dbInst.run(
+            "INSERT INTO teachers (user_id, teacher_code, subject, firebase_uid) VALUES (?, ?, ?, ?)",
+            [teacher.user_id, teacher.teacher_code, teacher.subject, teacher.firebase_uid]
+        );
+        return res.id;
+    }
+}
+
+async function upsertClass(dbInst, cls) {
+    const existing = await dbInst.get("SELECT id FROM classes WHERE class_code = ?", [cls.class_code]).catch(() => null);
+    if (existing) {
+        await dbInst.run(
+            "UPDATE classes SET name = COALESCE(?, name), teacher_id = COALESCE(?, teacher_id) WHERE id = ?",
+            [cls.name, cls.teacher_id, existing.id]
+        );
+        return existing.id;
+    } else {
+        const res = await dbInst.run(
+            "INSERT INTO classes (name, teacher_id, class_code) VALUES (?, ?, ?)",
+            [cls.name, cls.teacher_id, cls.class_code]
+        );
+        return res.id;
+    }
+}
+
+async function upsertStudent(dbInst, student) {
+    const existing = await dbInst.get(
+        "SELECT id FROM students WHERE user_id = ? OR student_code = ?",
+        [student.user_id, student.student_code]
+    ).catch(() => null);
+
+    if (existing) {
+        await dbInst.run(
+            "UPDATE students SET class_id = COALESCE(?, class_id), student_code = COALESCE(?, student_code), firebase_uid = COALESCE(?, firebase_uid) WHERE id = ?",
+            [student.class_id, student.student_code, student.firebase_uid, existing.id]
+        );
+        return existing.id;
+    } else {
+        const res = await dbInst.run(
+            "INSERT INTO students (user_id, class_id, student_code, firebase_uid) VALUES (?, ?, ?, ?)",
+            [student.user_id, student.class_id, student.student_code, student.firebase_uid]
+        );
+        return res.id;
+    }
+}
+
 async function seed(customDb = null) {
     const dbInst = customDb || defaultDb;
     await dbInst.initDb();
     
-    // Check if database already has users seeded
+    // Check if database already has sufficient users
     const countRow = await dbInst.get("SELECT COUNT(*) as cnt FROM users").catch(() => ({ cnt: 0 }));
     if (countRow && countRow.cnt > 5) {
         console.log(`[SEED] SQLite database already populated with ${countRow.cnt} users. Preserving records.`);
@@ -17,63 +127,75 @@ async function seed(customDb = null) {
     console.log('Seeding Unified SmartSlate database with authentic Indian / Andhra Pradesh demo profiles...');
 
     const passHash = await bcrypt.hash('SmartSlate@123', 10);
-    const pinStudent1 = await bcrypt.hash('1111', 10);
-    const pinStudent2 = await bcrypt.hash('2222', 10);
-    const pinTeacher = await bcrypt.hash('3333', 10);
-    const pinParent = await bcrypt.hash('4444', 10);
 
-    // 1. Create Class Teacher (Ravi Kumar - Sri Venkateswara High School)
-    const teacherRes = await run(
-        "INSERT OR IGNORE INTO users (name, role, email, password_hash, teacher_code, subject, firebase_uid) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        ['Priya Sharma', 'teacher', 'teacher_math_hs@smartslate.test', passHash, 'TCH-PRIYA-MATH-05', 'Mathematics', 'uid_teacher_math_hs']
-    );
-    const teacherUser = await dbInst.get("SELECT id FROM users WHERE email = ?", ['teacher_math_hs@smartslate.test']);
-    const teacherUserId = teacherUser ? teacherUser.id : (teacherRes ? teacherRes.id : 1);
-    await run("INSERT OR IGNORE INTO teachers (user_id, teacher_code, subject, firebase_uid) VALUES (?, ?, ?, ?)", [teacherUserId, 'TCH-PRIYA-MATH-05', 'Mathematics', 'uid_teacher_math_hs']);
+    // 1. Class Teacher (Priya Sharma)
+    const teacherUserId = await upsertUser(dbInst, {
+        name: 'Priya Sharma',
+        role: 'teacher',
+        email: 'teacher_math_hs@smartslate.test',
+        password_hash: passHash,
+        teacher_code: 'TCH-PRIYA-MATH-05',
+        subject: 'Mathematics',
+        firebase_uid: 'uid_teacher_math_hs'
+    });
 
-    // 2. Create Class (10th Class — Section A)
-    await run(
-        "INSERT OR IGNORE INTO classes (name, teacher_id, class_code) VALUES (?, ?, ?)",
-        ['10th Class — Section A', teacherUserId, 'CLASS-10A']
-    );
-    const classRow = await dbInst.get("SELECT id FROM classes WHERE class_code = ?", ['CLASS-10A']);
-    const classId = classRow ? classRow.id : 1;
+    await upsertTeacher(dbInst, {
+        user_id: teacherUserId,
+        teacher_code: 'TCH-PRIYA-MATH-05',
+        subject: 'Mathematics',
+        firebase_uid: 'uid_teacher_math_hs'
+    });
 
-    // 3. Create Student 1 (Meghana Vardhan - B.Tech)
-    await run(
-        "INSERT OR IGNORE INTO users (name, role, email, password_hash, student_code, firebase_uid) VALUES (?, ?, ?, ?, ?, ?)",
-        ['Meghana Vardhan', 'student', 'student_151@smartslate.test', passHash, 'STU-MEGHB1A-11', 'uid_student_151']
-    );
-    const s1User = await dbInst.get("SELECT id FROM users WHERE email = ?", ['student_151@smartslate.test']);
-    const student1UserId = s1User ? s1User.id : 2;
-    await run(
-        "INSERT OR IGNORE INTO students (user_id, class_id, student_code, firebase_uid) VALUES (?, ?, ?, ?)",
-        [student1UserId, classId, 'STU-MEGHB1A-11', 'uid_student_151']
-    );
-    const s1Row = await dbInst.get("SELECT id FROM students WHERE student_code = ?", ['STU-MEGHB1A-11']);
-    const student1Id = s1Row ? s1Row.id : 1;
+    // 2. Class (10th Class — Section A)
+    const classId = await upsertClass(dbInst, {
+        name: '10th Class — Section A',
+        teacher_id: teacherUserId,
+        class_code: 'CLASS-10A'
+    });
 
-    // 4. Create Student 2 (Daya Nayak)
-    await run(
-        "INSERT OR IGNORE INTO users (name, role, email, password_hash, student_code, firebase_uid) VALUES (?, ?, ?, ?, ?, ?)",
-        ['Daya Nayak', 'student', 'student_001@smartslate.test', passHash, 'STU-VAMS1A-11', 'uid_student_001']
-    );
-    const s2User = await dbInst.get("SELECT id FROM users WHERE email = ?", ['student_001@smartslate.test']);
-    const student2UserId = s2User ? s2User.id : 3;
-    await run(
-        "INSERT OR IGNORE INTO students (user_id, class_id, student_code, firebase_uid) VALUES (?, ?, ?, ?)",
-        [student2UserId, classId, 'STU-VAMS1A-11', 'uid_student_001']
-    );
-    const s2Row = await dbInst.get("SELECT id FROM students WHERE student_code = ?", ['STU-VAMS1A-11']);
-    const student2Id = s2Row ? s2Row.id : 2;
+    // 3. Student 1 (Meghana Vardhan)
+    const student1UserId = await upsertUser(dbInst, {
+        name: 'Meghana Vardhan',
+        role: 'student',
+        email: 'student_151@smartslate.test',
+        password_hash: passHash,
+        student_code: 'STU-MEGHB1A-11',
+        firebase_uid: 'uid_student_151'
+    });
 
-    // 5. Create Parent (Ramesh Kumar - SmartSlate@123) & Link to children
-    await run(
-        "INSERT OR IGNORE INTO users (name, role, email, password_hash, parent_code, firebase_uid) VALUES (?, ?, ?, ?, ?, ?)",
-        ['Ramesh Kumar', 'parent', 'parent_ramesh@smartslate.test', passHash, 'PAR-RAMES-101', 'uid_parent_ramesh']
-    );
-    const parentUser = await dbInst.get("SELECT id FROM users WHERE email = ?", ['parent_ramesh@smartslate.test']);
-    const parentUserId = parentUser ? parentUser.id : 4;
+    const student1Id = await upsertStudent(dbInst, {
+        user_id: student1UserId,
+        class_id: classId,
+        student_code: 'STU-MEGHB1A-11',
+        firebase_uid: 'uid_student_151'
+    });
+
+    // 4. Student 2 (Daya Nayak)
+    const student2UserId = await upsertUser(dbInst, {
+        name: 'Daya Nayak',
+        role: 'student',
+        email: 'student_001@smartslate.test',
+        password_hash: passHash,
+        student_code: 'STU-VAMS1A-11',
+        firebase_uid: 'uid_student_001'
+    });
+
+    const student2Id = await upsertStudent(dbInst, {
+        user_id: student2UserId,
+        class_id: classId,
+        student_code: 'STU-VAMS1A-11',
+        firebase_uid: 'uid_student_001'
+    });
+
+    // 5. Parent (Ramesh Kumar) & Link to children
+    const parentUserId = await upsertUser(dbInst, {
+        name: 'Ramesh Kumar',
+        role: 'parent',
+        email: 'parent_ramesh@smartslate.test',
+        password_hash: passHash,
+        parent_code: 'PAR-RAMES-101',
+        firebase_uid: 'uid_parent_ramesh'
+    });
 
     await run("INSERT OR IGNORE INTO parent_links (parent_user_id, student_id, status) VALUES (?, ?, ?)", [parentUserId, student1Id, 'accepted']);
     await run("INSERT OR IGNORE INTO parent_links (parent_user_id, student_id, status) VALUES (?, ?, ?)", [parentUserId, student2Id, 'accepted']);
@@ -92,7 +214,7 @@ async function seed(customDb = null) {
         [String(student1UserId), String(teacherUserId), 'STU-MEGHB1A-11', 'TCH-PRIYA-MATH-05', 'Meghana Vardhan', 'Priya Sharma', 'Mathematics']
     );
 
-    // 6. Books for Students
+    // 6. Books & Notes
     const b1 = await run("INSERT OR IGNORE INTO books (student_id, title, subject, cover_style) VALUES (?, ?, ?, ?)", [student1Id, 'Physical Science', 'Science', 'blue_linen']);
     const b2 = await run("INSERT OR IGNORE INTO books (student_id, title, subject, cover_style) VALUES (?, ?, ?, ?)", [student1Id, 'Mathematics', 'Math', 'sage_paper']);
     
@@ -117,7 +239,7 @@ async function seed(customDb = null) {
         );
     }
 
-    // 7. Fresh Assignments & Submissions
+    // 7. Assignments & Submissions
     const dueTomorrow = new Date(Date.now() + 86400000 * 2).toISOString();
     const dueNextWeek = new Date(Date.now() + 86400000 * 5).toISOString();
 
@@ -142,7 +264,7 @@ async function seed(customDb = null) {
         );
     }
 
-    // 8. Attendance Logs
+    // 8. Attendance
     const dates = [
         new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0],
         new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0],

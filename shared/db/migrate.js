@@ -83,21 +83,30 @@ async function runSafeMigrations(dbPath) {
 
                 // 2. Safely add missing columns to existing tables
                 // USERS TABLE
+                await ensureColumn(db, 'users', 'name', 'TEXT');
+                await ensureColumn(db, 'users', 'email', 'TEXT');
+                await ensureColumn(db, 'users', 'role', "TEXT DEFAULT 'student'");
+                await ensureColumn(db, 'users', 'password_hash', 'TEXT');
+                await ensureColumn(db, 'users', 'student_code', 'TEXT');
                 await ensureColumn(db, 'users', 'teacher_code', 'TEXT');
                 await ensureColumn(db, 'users', 'parent_code', 'TEXT');
-                await ensureColumn(db, 'users', 'student_code', 'TEXT');
                 await ensureColumn(db, 'users', 'subject', 'TEXT');
                 await ensureColumn(db, 'users', 'phone', 'TEXT');
                 await ensureColumn(db, 'users', 'firebase_uid', 'TEXT');
+                await ensureColumn(db, 'users', 'created_at', 'DATETIME');
                 await ensureColumn(db, 'users', 'updated_at', 'DATETIME');
 
                 // TEACHERS TABLE
+                await ensureColumn(db, 'teachers', 'user_id', 'INTEGER');
                 await ensureColumn(db, 'teachers', 'teacher_code', 'TEXT');
                 await ensureColumn(db, 'teachers', 'subject', 'TEXT');
                 await ensureColumn(db, 'teachers', 'firebase_uid', 'TEXT');
+                await ensureColumn(db, 'teachers', 'created_at', 'DATETIME');
                 await ensureColumn(db, 'teachers', 'updated_at', 'DATETIME');
 
                 // STUDENTS TABLE
+                await ensureColumn(db, 'students', 'user_id', 'INTEGER');
+                await ensureColumn(db, 'students', 'class_id', 'INTEGER');
                 await ensureColumn(db, 'students', 'student_code', 'TEXT');
                 await ensureColumn(db, 'students', 'parent_code', 'TEXT');
                 await ensureColumn(db, 'students', 'grade', 'TEXT');
@@ -105,7 +114,26 @@ async function runSafeMigrations(dbPath) {
                 await ensureColumn(db, 'students', 'class_id_str', 'TEXT');
                 await ensureColumn(db, 'students', 'student_id_str', 'TEXT');
                 await ensureColumn(db, 'students', 'firebase_uid', 'TEXT');
+                await ensureColumn(db, 'students', 'created_at', 'DATETIME');
                 await ensureColumn(db, 'students', 'updated_at', 'DATETIME');
+
+                // STUDENT_PROFILES TABLE (if table exists)
+                await ensureColumn(db, 'student_profiles', 'firebase_uid', 'TEXT');
+                await ensureColumn(db, 'student_profiles', 'student_id', 'TEXT');
+                await ensureColumn(db, 'student_profiles', 'name', 'TEXT');
+                await ensureColumn(db, 'student_profiles', 'email', 'TEXT');
+                await ensureColumn(db, 'student_profiles', 'class', "TEXT DEFAULT '8'");
+                await ensureColumn(db, 'student_profiles', 'class_name', "TEXT DEFAULT 'Class 8'");
+                await ensureColumn(db, 'student_profiles', 'education_level', "TEXT DEFAULT 'secondary'");
+                await ensureColumn(db, 'student_profiles', 'section', "TEXT DEFAULT 'A'");
+                await ensureColumn(db, 'student_profiles', 'parent_student_code', 'TEXT');
+
+                // CLASSES TABLE
+                await ensureColumn(db, 'classes', 'name', 'TEXT');
+                await ensureColumn(db, 'classes', 'teacher_id', 'INTEGER');
+                await ensureColumn(db, 'classes', 'class_code', 'TEXT');
+                await ensureColumn(db, 'classes', 'section', 'TEXT');
+                await ensureColumn(db, 'classes', 'created_at', 'DATETIME');
 
                 // EXAMS TABLE
                 await ensureColumn(db, 'exams', 'start_time', 'DATETIME');
