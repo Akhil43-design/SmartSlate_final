@@ -1,0 +1,69 @@
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
+const fs = require('fs');
+
+const dbPath = path.join(__dirname, 'smartslate.db');
+const schemaPath = path.join(__dirname, 'schema.sql');
+
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error opening Unified SmartSlate SQLite database:', err);
+    } else {
+        console.log('Connected to Unified SmartSlate SQLite database at:', dbPath);
+        db.run('PRAGMA foreign_keys = ON;');
+        db.run('PRAGMA journal_mode = WAL;');
+        db.run('PRAGMA synchronous = NORMAL;');
+        db.run('PRAGMA busy_timeout = 5000;');
+    }
+});
+
+function run(sql, params = []) {
+    return new Promise((resolve, reject) => {
+        db.run(sql, params, function (err) {
+            if (err) return reject(err);
+            resolve({ id: this.lastID, changes: this.changes });
+        });
+    });
+}
+
+function get(sql, params = []) {
+    return new Promise((resolve, reject) => {
+        db.get(sql, params, (err, row) => {
+            if (err) return reject(err);
+            resolve(row);
+        });
+    });
+}
+
+function all(sql, params = []) {
+    return new Promise((resolve, reject) => {
+        db.all(sql, params, (err, rows) => {
+            if (err) return reject(err);
+            resolve(rows);
+        });
+    });
+}
+
+function initDb() {
+    return new Promise((resolve, reject) => {
+        const schemaSql = fs.readFileSync(schemaPath, 'utf8');
+        db.exec(schemaSql, (err) => {
+            if (err) {
+                console.error('Failed to initialize database schema:', err);
+                return reject(err);
+            }
+            db.run("ALTER TABLE exams ADD COLUMN start_time DATETIME", () => {});
+            db.run("ALTER TABLE exams ADD COLUMN end_time DATETIME", () => {});
+            console.log('Unified SmartSlate database schema initialized.');
+            resolve();
+        });
+    });
+}
+
+module.exports = {
+    db,
+    run,
+    get,
+    all,
+    initDb
+};

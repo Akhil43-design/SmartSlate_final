@@ -76,7 +76,7 @@ app.get('*', (req, res) => {
 });
 
 // Initialize DB, seed demo data, setup sockets, and start server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3002;
 
 async function startServer() {
     try {

@@ -56,10 +56,11 @@ const API = {
         });
     },
 
-    signup(name, role, email, password) {
+    signup(name, role, email, password, student_code) {
+        const payload = typeof name === 'object' ? name : { name, role, email, password, student_code };
         return this.request('/api/auth/signup', {
             method: 'POST',
-            body: JSON.stringify({ name, role, email, password })
+            body: JSON.stringify(payload)
         });
     },
 
@@ -79,11 +80,47 @@ const API = {
         });
     },
 
+    connectChild(studentCode) {
+        return this.linkChild(studentCode);
+    },
+
     getChildren() {
         return this.request('/api/parent/children');
     },
 
+    getChildOverview(studentId) {
+        return this.request(`/api/parent/child/${studentId}/overview`);
+    },
+
+    getChildExams(studentId) {
+        return this.request(`/api/parent/child/${studentId}/exams`);
+    },
+
+    getChildNotes(studentId) {
+        return this.request(`/api/parent/child/${studentId}/notes`);
+    },
+
+    getChildSearches(studentId) {
+        return this.request(`/api/parent/child/${studentId}/searches`);
+    },
+
+    getChildAttendance(studentId) {
+        return this.request(`/api/parent/child/${studentId}/attendance`);
+    },
+
+    getChildAssignments(studentId) {
+        return this.request(`/api/parent/child/${studentId}/assignments`);
+    },
+
+    getChildAnnouncements(studentId) {
+        return this.request(`/api/parent/child/${studentId}/announcements`);
+    },
+
     getProgressCard(studentId) {
+        return this.request(`/api/parent/progress-card/${studentId}`);
+    },
+
+    getChildProgressCard(studentId) {
         return this.request(`/api/parent/progress-card/${studentId}`);
     },
 
@@ -91,19 +128,68 @@ const API = {
         return this.request(`/api/parent/web-activity/${studentId}`);
     },
 
+    getChildWebActivity(studentId) {
+        return this.request(`/api/parent/web-activity/${studentId}`);
+    },
+
+    getChildActivity(studentId) {
+        return this.request(`/api/parent/web-activity/${studentId}`);
+    },
+
+    getchildactivity(studentId) {
+        return this.request(`/api/parent/web-activity/${studentId}`);
+    },
+
     // Teacher Portal
+    connectStudent(studentCode) {
+        return this.request('/api/teacher/connect-student', {
+            method: 'POST',
+            body: JSON.stringify({ studentCode })
+        });
+    },
+
+    searchStudents(query) {
+        return this.request(`/api/teacher/search-students?q=${encodeURIComponent(query)}`);
+    },
+
+    getAllStudents() {
+        return this.request('/api/teacher/students');
+    },
+
     getTeacherClasses() {
         return this.request('/api/teacher/classes');
     },
 
-    getClassStudents(classId) {
-        return this.request(`/api/teacher/students/${classId}`);
+    getConnectedClasses() {
+        return this.request('/api/teacher/connected-classes');
     },
 
-    createAssignment(class_id, title, description, due_at) {
+    getClassStudents(classId) {
+        if (classId) {
+            return this.request(`/api/teacher/students/${classId}`);
+        }
+        return this.request('/api/teacher/students');
+    },
+
+    createAssignment(target_class, title, description, due_at, subject) {
+        const payload = typeof target_class === 'object'
+            ? target_class
+            : { class_id: target_class, target_class, title, description, due_at, subject };
         return this.request('/api/assignments', {
             method: 'POST',
-            body: JSON.stringify({ class_id, title, description, due_at })
+            body: JSON.stringify(payload)
+        });
+    },
+
+    getAnnouncements() {
+        return this.request('/api/chat/announcements');
+    },
+
+    createAnnouncement(title, content, classId, subject) {
+        const payload = typeof title === 'object' ? title : { title, content, classId, subject };
+        return this.request('/api/chat/announcements', {
+            method: 'POST',
+            body: JSON.stringify(payload)
         });
     },
 
@@ -118,10 +204,25 @@ const API = {
         });
     },
 
-    createExam(class_id, title, questions, duration_minutes) {
+    createExam(examData) {
         return this.request('/api/exams', {
             method: 'POST',
-            body: JSON.stringify({ class_id, title, questions, duration_minutes })
+            body: JSON.stringify(examData)
+        });
+    },
+
+    getExamSubmissions(examId) {
+        return this.request(`/api/exams/${examId}/submissions`);
+    },
+
+    getExamLiveStatus(examId) {
+        return this.request(`/api/exams/${examId}/live-status`);
+    },
+
+    evaluateExamSubmission(submissionId, score, total_marks, feedback) {
+        return this.request(`/api/exams/evaluate/${submissionId}`, {
+            method: 'POST',
+            body: JSON.stringify({ score, total_marks, feedback })
         });
     },
 

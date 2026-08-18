@@ -1,0 +1,123 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for Role-Based Access Control
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasRole(role) {
+      return isAuthenticated() && getUserData().role == role;
+    }
+
+    function isStudent() { return hasRole('student'); }
+    function isTeacher() { return hasRole('teacher'); }
+    function isParent() { return hasRole('parent'); }
+    function isAdmin() { return hasRole('admin'); }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if request.auth.uid == userId || isAdmin();
+    }
+
+    match /notes/{noteId} {
+      allow read, create, update, delete: if isAuthenticated() && request.auth.uid == resource.data.studentId;
+    }
+
+    // Students Collection
+    match /students/{studentId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.user_id ||
+        isTeacher() ||
+        (isParent() && exists(/databases/$(database)/documents/parent_links/$(request.auth.uid + '_' + studentId)))
+      );
+      allow write: if isTeacher() || isAdmin();
+    }
+
+    // Attendance Collection
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher() || isAdmin();
+    }
+
+    // Assignments Collection
+    match /assignments/{assignmentId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isTeacher() || isAdmin();
+    }
+
+    // Submissions Collection
+    match /submissions/{submissionId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.user_id ||
+        isTeacher() ||
+        isParent()
+      );
+      allow create, update: if isStudent() || isTeacher() || isAdmin();
+    }
+
+    // Exam Results Summaries
+    match /exam_results/{resultId} {
+      allow read: if isAuthenticated();
+      allow write: if isStudent() || isTeacher() || isAdmin();
+    }
+
+    // Shared Notes (Explicitly Shared Notebook Content Only)
+    match /shared_notes/{noteId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.student_user_id ||
+        request.auth.uid in resource.data.shared_with ||
+        isTeacher()
+      );
+      allow create, update, delete: if isAuthenticated() && request.auth.uid == resource.data.student_user_id;
+    }
+
+    // Teacher Announcements
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher() || isAdmin();
+    }
+
+    // Classes Collection
+    match /classes/{classId} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher() || isAdmin();
+    }
+
+    // Teachers Collection
+    match /teachers/{teacherId} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher() || isAdmin();
+    }
+
+    // Parents Collection
+    match /parents/{parentId} {
+      allow read: if isAuthenticated();
+      allow write: if isParent() || isAdmin();
+    }
+
+    // Notifications Collection
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow write: if isAuthenticated();
+    }
+
+    // Student Progress Summaries
+    match /student_progress/{studentId} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher() || isAdmin();
+    }
+
+    // Parent-Student Links
+    match /parent_links/{linkId} {
+      allow read: if isAuthenticated();
+      allow write: if isParent() || isTeacher() || isAdmin();
+    }
+  }
+}

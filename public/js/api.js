@@ -1,15 +1,15 @@
-/* SmartSlate API Client with Auto-Retry Queue for Note Auto-Saves */
+/* SmartSlate Parent & Teacher API Client */
 
 const API = {
     getToken() {
-        return localStorage.getItem('smartslate_token');
+        return localStorage.getItem('smartslate_pt_token');
     },
 
     setToken(token) {
         if (token) {
-            localStorage.setItem('smartslate_token', token);
+            localStorage.setItem('smartslate_pt_token', token);
         } else {
-            localStorage.removeItem('smartslate_token');
+            localStorage.removeItem('smartslate_pt_token');
         }
     },
 
@@ -44,45 +44,7 @@ const API = {
             return data;
         } catch (err) {
             console.error(`API Error [${endpoint}]:`, err);
-            
-            // Queue mutating requests when offline or fetch fails
-            const method = (options.method || 'GET').toUpperCase();
-            if ((!navigator.onLine || err.name === 'TypeError') && (method === 'POST' || method === 'PUT')) {
-                this.queueOfflineRequest(endpoint, options);
-                return { success: true, offline: true, message: 'Saved to offline queue' };
-            }
             throw err;
-        }
-    },
-
-    queueOfflineRequest(endpoint, options) {
-        try {
-            const queue = JSON.parse(localStorage.getItem('smartslate_offline_queue') || '[]');
-            queue.push({ endpoint, options, timestamp: Date.now() });
-            localStorage.setItem('smartslate_offline_queue', JSON.stringify(queue));
-            console.log(`[Offline Queue] Queued ${options.method || 'GET'} request to ${endpoint}`);
-        } catch (e) {
-            console.error('Failed to queue offline request:', e);
-        }
-    },
-
-    async flushOfflineQueue() {
-        try {
-            const queue = JSON.parse(localStorage.getItem('smartslate_offline_queue') || '[]');
-            if (!queue.length) return;
-
-            console.log(`[Offline Queue] Flushing ${queue.length} pending requests...`);
-            localStorage.removeItem('smartslate_offline_queue');
-
-            for (const item of queue) {
-                try {
-                    await this.request(item.endpoint, item.options);
-                } catch (e) {
-                    console.error(`Failed to flush queued request to ${item.endpoint}:`, e);
-                }
-            }
-        } catch (e) {
-            console.error('Failed to process offline queue:', e);
         }
     },
 
@@ -94,194 +56,23 @@ const API = {
         });
     },
 
-    loginByPin(pin) {
-        return this.request('/api/auth/login-by-pin', {
-            method: 'POST',
-            body: JSON.stringify({ pin })
-        });
-    },
-
-    signup(name, role, email, password) {
+    signup(name, role, email, password, student_code) {
+        const payload = typeof name === 'object' ? name : { name, role, email, password, student_code };
         return this.request('/api/auth/signup', {
             method: 'POST',
-            body: JSON.stringify({ name, role, email, password })
+            body: JSON.stringify(payload)
         });
     },
 
-    getMe() {
+    getCurrentUser() {
         return this.request('/api/auth/me');
     },
 
     logout() {
-        this.setToken(null);
-        return Promise.resolve();
+        return this.request('/api/auth/logout', { method: 'POST' });
     },
 
-    // Books & Notes
-    getBooks(studentId) {
-        const query = studentId ? `?studentId=${studentId}` : '';
-        return this.request(`/api/books${query}`);
-    },
-
-    createBook(title, subject, cover_style) {
-        return this.request('/api/books', {
-            method: 'POST',
-            body: JSON.stringify({ title, subject, cover_style })
-        });
-    },
-
-    deleteBook(id) {
-        return this.request(`/api/books/${id}`, { method: 'DELETE' });
-    },
-
-    getNotes(bookId, search, subject, studentId) {
-        const params = new URLSearchParams();
-        if (bookId) params.append('bookId', bookId);
-        if (search) params.append('search', search);
-        if (subject) params.append('subject', subject);
-        if (studentId) params.append('studentId', studentId);
-        return this.request(`/api/notes?${params.toString()}`);
-    },
-
-    getNotesHistory(studentId) {
-        const query = studentId ? `?studentId=${studentId}` : '';
-        return this.request(`/api/notes/history${query}`);
-    },
-
-    getSharedNotes() {
-        return this.request('/api/notes/shared-with-me');
-    },
-
-    createNote(bookId, title, rule_type, content) {
-        return this.request('/api/notes', {
-            method: 'POST',
-            body: JSON.stringify({ bookId, title, rule_type, content })
-        });
-    },
-
-    updateNote(id, title, rule_type, content) {
-        return this.request(`/api/notes/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify({ title, rule_type, content })
-        });
-    },
-
-    deleteNote(id) {
-        return this.request(`/api/notes/${id}`, { method: 'DELETE' });
-    },
-
-    shareNote(id, targetStudentCode) {
-        return this.request(`/api/notes/${id}/share`, {
-            method: 'POST',
-            body: JSON.stringify({ targetStudentCode })
-        });
-    },
-
-    // Assignments
-    getAssignments(classId, studentId) {
-        const params = new URLSearchParams();
-        if (classId) params.append('classId', classId);
-        if (studentId) params.append('studentId', studentId);
-        return this.request(`/api/assignments?${params.toString()}`);
-    },
-
-    createAssignment(class_id, title, description, due_at) {
-        return this.request('/api/assignments', {
-            method: 'POST',
-            body: JSON.stringify({ class_id, title, description, due_at })
-        });
-    },
-
-    submitAssignment(id, content) {
-        return this.request(`/api/assignments/${id}/submit`, {
-            method: 'POST',
-            body: JSON.stringify({ content })
-        });
-    },
-
-    getAssignmentSubmissions(id) {
-        return this.request(`/api/assignments/${id}/submissions`);
-    },
-
-    // Chat
-    getChatGroups() {
-        return this.request('/api/chat/groups');
-    },
-
-    getChatMessages(groupId, receiverId) {
-        const params = new URLSearchParams();
-        if (groupId) params.append('groupId', groupId);
-        if (receiverId) params.append('receiverId', receiverId);
-        return this.request(`/api/chat/messages?${params.toString()}`);
-    },
-
-    getDirectContacts() {
-        return this.request('/api/chat/direct-contacts');
-    },
-
-    // Exams
-    getExams(studentId) {
-        const query = studentId ? `?studentId=${studentId}` : '';
-        return this.request(`/api/exams${query}`);
-    },
-
-    getExamDetail(id) {
-        return this.request(`/api/exams/${id}`);
-    },
-
-    createExam(class_id, title, questions, duration_minutes, start_time, end_time) {
-        return this.request('/api/exams', {
-            method: 'POST',
-            body: JSON.stringify({ class_id, title, questions, duration_minutes, start_time, end_time })
-        });
-    },
-
-    submitExam(id, answers) {
-        return this.request(`/api/exams/${id}/submit`, {
-            method: 'POST',
-            body: JSON.stringify({ answers })
-        });
-    },
-
-    getExamResults(id) {
-        return this.request(`/api/exams/${id}/results`);
-    },
-
-    // Attendance
-    getAttendance(classId, date, studentId) {
-        const params = new URLSearchParams();
-        if (classId) params.append('classId', classId);
-        if (date) params.append('date', date);
-        if (studentId) params.append('studentId', studentId);
-        return this.request(`/api/attendance?${params.toString()}`);
-    },
-
-    markAttendance(class_id, date, records) {
-        return this.request('/api/attendance', {
-            method: 'POST',
-            body: JSON.stringify({ class_id, date, records })
-        });
-    },
-
-    // Notifications
-    getNotifications() {
-        return this.request('/api/notifications');
-    },
-
-    markNotificationRead(id) {
-        return this.request(`/api/notifications/${id}/read`, { method: 'POST' });
-    },
-
-    markAllNotificationsRead() {
-        return this.request('/api/notifications/read-all', { method: 'POST' });
-    },
-
-    // Safe Web Search
-    searchWeb(query) {
-        return this.request(`/api/search?q=${encodeURIComponent(query)}`);
-    },
-
-    // Parent
+    // Parent Portal
     linkChild(studentCode) {
         return this.request('/api/parent/link', {
             method: 'POST',
@@ -289,24 +80,201 @@ const API = {
         });
     },
 
+    connectChild(studentCode) {
+        return this.linkChild(studentCode);
+    },
+
     getChildren() {
         return this.request('/api/parent/children');
     },
 
-    getChildWebActivity(studentId) {
-        return this.request(`/api/parent/web-activity/${studentId}`);
+    getChildOverview(studentId) {
+        return this.request(`/api/parent/child/${studentId}/overview`);
+    },
+
+    getChildExams(studentId) {
+        return this.request(`/api/parent/child/${studentId}/exams`);
+    },
+
+    getChildNotes(studentId) {
+        return this.request(`/api/parent/child/${studentId}/notes`);
+    },
+
+    getChildSearches(studentId) {
+        return this.request(`/api/parent/child/${studentId}/searches`);
+    },
+
+    getChildAttendance(studentId) {
+        return this.request(`/api/parent/child/${studentId}/attendance`);
+    },
+
+    getChildAssignments(studentId) {
+        return this.request(`/api/parent/child/${studentId}/assignments`);
+    },
+
+    getChildAnnouncements(studentId) {
+        return this.request(`/api/parent/child/${studentId}/announcements`);
     },
 
     getProgressCard(studentId) {
         return this.request(`/api/parent/progress-card/${studentId}`);
     },
 
-    // Teacher
+    getChildProgressCard(studentId) {
+        return this.request(`/api/parent/progress-card/${studentId}`);
+    },
+
+    getWebActivity(studentId) {
+        return this.request(`/api/parent/web-activity/${studentId}`);
+    },
+
+    getChildWebActivity(studentId) {
+        return this.request(`/api/parent/web-activity/${studentId}`);
+    },
+
+    getChildActivity(studentId) {
+        return this.request(`/api/parent/web-activity/${studentId}`);
+    },
+
+    getchildactivity(studentId) {
+        return this.request(`/api/parent/web-activity/${studentId}`);
+    },
+
+    // Teacher Portal
+    connectStudent(studentCode) {
+        return this.request('/api/teacher/connect-student', {
+            method: 'POST',
+            body: JSON.stringify({ studentCode })
+        });
+    },
+
+    searchStudents(query) {
+        return this.request(`/api/teacher/search-students?q=${encodeURIComponent(query)}`);
+    },
+
+    getAllStudents() {
+        return this.request('/api/teacher/students');
+    },
+
     getTeacherClasses() {
         return this.request('/api/teacher/classes');
     },
 
+    getConnectedClasses() {
+        return this.request('/api/teacher/connected-classes');
+    },
+
     getClassStudents(classId) {
-        return this.request(`/api/teacher/students/${classId}`);
+        if (classId) {
+            return this.request(`/api/teacher/students/${classId}`);
+        }
+        return this.request('/api/teacher/students');
+    },
+
+    createAssignment(target_class, title, description, due_at, subject) {
+        const payload = typeof target_class === 'object'
+            ? target_class
+            : { class_id: target_class, target_class, title, description, due_at, subject };
+        return this.request('/api/assignments', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+    },
+
+    getAnnouncements() {
+        return this.request('/api/chat/announcements');
+    },
+
+    createAnnouncement(title, content, classId, subject) {
+        const payload = typeof title === 'object' ? title : { title, content, classId, subject };
+        return this.request('/api/chat/announcements', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+    },
+
+    getAssignmentSubmissions(assignmentId) {
+        return this.request(`/api/assignments/${assignmentId}/submissions`);
+    },
+
+    gradeSubmission(submissionId, grade, feedback) {
+        return this.request(`/api/assignments/grade/${submissionId}`, {
+            method: 'POST',
+            body: JSON.stringify({ grade, feedback })
+        });
+    },
+
+    createExam(examData) {
+        return this.request('/api/exams', {
+            method: 'POST',
+            body: JSON.stringify(examData)
+        });
+    },
+
+    getExamSubmissions(examId) {
+        return this.request(`/api/exams/${examId}/submissions`);
+    },
+
+    getExamLiveStatus(examId) {
+        return this.request(`/api/exams/${examId}/live-status`);
+    },
+
+    evaluateExamSubmission(submissionId, score, total_marks, feedback) {
+        return this.request(`/api/exams/evaluate/${submissionId}`, {
+            method: 'POST',
+            body: JSON.stringify({ score, total_marks, feedback })
+        });
+    },
+
+    getExamResults(examId) {
+        return this.request(`/api/exams/${examId}/results`);
+    },
+
+    getAttendance(classId, studentId, date) {
+        let url = '/api/attendance?';
+        if (classId) url += `classId=${classId}&`;
+        if (studentId) url += `studentId=${studentId}&`;
+        if (date) url += `date=${date}`;
+        return this.request(url);
+    },
+
+    markAttendance(class_id, student_id, date, status) {
+        return this.request('/api/attendance/mark', {
+            method: 'POST',
+            body: JSON.stringify({ class_id, student_id, date, status })
+        });
+    },
+
+    // Shared APIs
+    getAssignments(classId, studentId) {
+        let url = '/api/assignments?';
+        if (classId) url += `classId=${classId}&`;
+        if (studentId) url += `studentId=${studentId}`;
+        return this.request(url);
+    },
+
+    getExams(studentId) {
+        let url = '/api/exams?';
+        if (studentId) url += `studentId=${studentId}`;
+        return this.request(url);
+    },
+
+    getChatMessages(receiverId) {
+        return this.request(`/api/chat/messages?receiverId=${receiverId}`);
+    },
+
+    sendMessage(receiverId, content) {
+        return this.request('/api/chat/send', {
+            method: 'POST',
+            body: JSON.stringify({ receiverId, content })
+        });
+    },
+
+    getNotifications() {
+        return this.request('/api/notifications');
+    },
+
+    markNotificationsRead() {
+        return this.request('/api/notifications/read-all', { method: 'POST' });
     }
 };

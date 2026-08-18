@@ -32,6 +32,13 @@ const SocketManager = {
             }
         });
 
+        this.socket.on('new_assignment', (assignment) => {
+            this._emit('new_assignment', assignment);
+            if (window.App && window.App.onAssignmentReceived) {
+                window.App.onAssignmentReceived(assignment);
+            }
+        });
+
         this.socket.on('connect_error', (err) => {
             console.warn('Socket connection error:', err.message);
         });

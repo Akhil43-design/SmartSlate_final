@@ -38,9 +38,9 @@ class NotificationRepository(
 
     private fun getMockNotifications(userId: String): List<NotificationItem> {
         return listOf(
-            NotificationItem("n1", userId, "New Assignment Posted", "Prof. Sharma posted 'Quadratic Equations Problem Set' due Aug 12.", "assignment", false, Timestamp.now()),
-            NotificationItem("n2", userId, "Submission Graded", "Aarav's Math Problem Set has been graded: 95/100.", "grade", false, Timestamp.now()),
-            NotificationItem("n3", userId, "Attendance Alert", "Aarav was marked Present for Class 10-A today.", "attendance", true, Timestamp.now())
+            NotificationItem("n1", userId, "New Assignment Posted", "Prof. Sarah Lin posted 'Science Report: Plant Ecosystems' due Aug 15.", "assignment", false, Timestamp.now()),
+            NotificationItem("n2", userId, "Submission Graded", "Alex's Science Report has been graded: 95/100.", "grade", false, Timestamp.now()),
+            NotificationItem("n3", userId, "Attendance Alert", "Alex was marked Present for Grade 5 Alpha today.", "attendance", true, Timestamp.now())
         )
     }
 }

@@ -3,23 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SmartSlate — Digital Learning Operating System</title>
+    <title>SmartSlate — Parent & Teacher Web Portal</title>
     
     <!-- CSS Design System -->
-    <link rel="stylesheet" href="/css/variables.css">
-    <link rel="stylesheet" href="/css/components.css">
-    <link rel="stylesheet" href="/css/notebook.css">
-    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/variables.css?v=4.0">
+    <link rel="stylesheet" href="/css/components.css?v=4.0">
+    <link rel="stylesheet" href="/css/styles.css?v=4.0">
 </head>
 <body>
 
-    <!-- Offline Banner -->
-    <div id="offline-banner" class="offline-banner" style="display: none;">
-        <svg class="icon-svg"><use href="#icon-wifi-off"/></svg>
-        <span>Working Offline — Unsaved changes will sync automatically when Wi-Fi re-connects.</span>
-    </div>
-
-    <!-- Inline SVG Icon Collection (Start Universal Tiny Oval Icons) -->
     <svg style="display: none;">
         <defs>
             <g id="icon-book">
@@ -39,10 +31,6 @@
                 <path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
             </g>
-            <g id="icon-search">
-                <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" fill="none"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </g>
             <g id="icon-attendance">
                 <rect x="3" y="4" width="18" height="18" rx="3" ry="3" stroke="currentColor" stroke-width="2" fill="none"/>
                 <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -61,199 +49,91 @@
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
                 <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none"/>
             </g>
-            <g id="icon-share">
-                <circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="2" fill="none"/>
-                <circle cx="6" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none"/>
-                <circle cx="18" cy="19" r="3" stroke="currentColor" stroke-width="2" fill="none"/>
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke="currentColor" stroke-width="2"/>
-                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke="currentColor" stroke-width="2"/>
-            </g>
-            <g id="icon-plus">
-                <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </g>
-            <g id="icon-history">
-                <polyline points="12 8 12 12 14 14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            </g>
             <g id="icon-logout">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
                 <polyline points="16 17 21 12 16 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
                 <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </g>
-            <g id="icon-menu">
-                <line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </g>
-            <g id="icon-wifi-off">
-                <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
-                <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
-                <path d="M10.71 5.05A16 16 0 0 1 22.58 9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
-                <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
-                <path d="M8.53 16.11a6 6 0 0 1 6.95 0" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
-                <line x1="12" y1="20" x2="12.01" y2="20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </g>
-            <g id="icon-check">
-                <polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            </g>
-            <g id="icon-x">
-                <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </g>
-            <g id="icon-pen">
-                <path d="M12 20h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            </g>
-            <g id="icon-trash">
-                <polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            </g>
-            <g id="icon-chevron-left">
-                <polyline points="15 18 9 12 15 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            </g>
-            <g id="icon-chevron-right">
-                <polyline points="9 18 15 12 9 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            </g>
-            <g id="icon-home">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                <polyline points="9 22 9 12 15 12 15 22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            </g>
         </defs>
     </svg>
 
-    <!-- Splash / Loading Screen -->
+    <!-- Splash Screen -->
     <div id="loading-screen">
         <div class="splash-logo-container">
-            <div class="splash-icon">
-                <svg class="icon-svg icon-svg-xl"><use href="#icon-book"/></svg>
+            <div class="splash-icon" style="background: var(--accent-purple);">
+                👨‍👩‍👧‍🏫
             </div>
-            <div class="splash-title">SmartSlate</div>
+            <div class="splash-title">SmartSlate Cloud</div>
         </div>
         <div class="spinner"></div>
-        <p style="margin-top: 16px; color: var(--text-secondary); font-weight: 600;">Initializing Digital OS...</p>
+        <p style="margin-top: 16px; color: var(--text-secondary); font-weight: 600;">Loading Parent & Teacher Portal...</p>
     </div>
 
     <div id="app">
-        <!-- Glass Navigation Bar -->
+        <!-- Top Navbar -->
         <header id="top-navbar" class="top-navbar" style="display: none;">
             <div style="display: flex; align-items: center; gap: 12px;">
-                <button class="nav-control-btn" id="btn-mobile-menu" title="Menu" style="display: none;">
-                    <img src="/assets/icons/icon-account-menu.svg" style="width: 22px; height: 22px;" alt="Menu">
-                </button>
                 <div class="nav-brand" id="nav-brand" onclick="App.navigateTo(App.currentUser ? App.currentUser.role : 'auth')">
-                    <div class="nav-logo-icon">
-                        <img src="/assets/icons/icon-bookshelf.svg" style="width: 24px; height: 24px; filter: brightness(0) invert(1);" alt="SmartSlate">
+                    <div class="nav-logo-icon" style="background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));">
+                        👨‍👩‍👧‍🏫
                     </div>
                     <div style="display: flex; flex-direction: column; text-align: left;">
-                        <span style="font-weight: 800; font-size: 18px; letter-spacing: -0.5px; background: linear-gradient(135deg, #1A365D, #4D96FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">SmartSlate</span>
-                        <span id="nav-role-tagline" class="glass-badge" style="font-size: 10px; padding: 1px 6px; text-transform: uppercase; font-weight: 700; width: max-content; margin-top: -2px;">Child OS</span>
+                        <span style="font-weight: 800; font-size: 18px; letter-spacing: -0.5px; background: linear-gradient(135deg, #9B51E0, #4D96FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">SmartSlate Portal</span>
+                        <span id="nav-role-tagline" class="glass-badge" style="font-size: 10px; padding: 1px 6px; text-transform: uppercase; font-weight: 700; width: max-content; margin-top: -2px;">Cloud Edition</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Role Specific Nav Items -->
+            <!-- Dynamic Nav Links -->
             <nav class="nav-links" id="nav-dynamic-links"></nav>
 
-            <!-- Controls (Notifications, User Profile Pill, Settings, Lock) -->
             <div class="nav-user-controls">
-                <!-- Notifications Bell Dropdown -->
-                <div class="notif-dropdown-wrapper">
-                    <button class="nav-control-btn bouncy-btn" id="btn-notif-bell" title="Notifications">
-                        <img src="/assets/icons/icon-notification-bell.svg" style="width: 20px; height: 20px;" alt="Notifications">
-                        <span id="notif-badge-count" class="glass-badge glass-badge-danger" style="display: none; position: absolute; top: -4px; right: -4px; font-size: 11px; padding: 2px 6px; font-weight: 800;">0</span>
-                    </button>
-
-                    <div class="notif-panel" id="notif-panel">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
-                            <span style="font-weight: 700;">Notifications & Alerts</span>
-                            <button class="glass-btn glass-btn-sm" id="btn-mark-all-read">Mark all read</button>
-                        </div>
-                        <div id="notif-list-container">
-                            <p style="text-align: center; color: var(--text-muted); padding: 20px;">No new notifications.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- User Profile Pill Card -->
-                <div id="user-profile-badge" class="nav-profile-pill bouncy-btn" onclick="App.showAccountOptionsModal()">
-                    <span id="user-role-avatar" style="font-size: 20px;">👨‍🎓</span>
+                <div id="user-profile-badge" class="nav-profile-pill bouncy-btn">
+                    <span id="user-role-avatar" style="font-size: 20px;">👨‍👩‍👦</span>
                     <div style="display: flex; flex-direction: column; text-align: left;">
                         <span id="user-display-name" style="font-size: 13px; font-weight: 700; color: var(--text-primary);">User</span>
-                        <span id="user-display-role" style="font-size: 10px; color: var(--text-secondary); text-transform: capitalize;">Student</span>
+                        <span id="user-display-role" style="font-size: 10px; color: var(--text-secondary); text-transform: capitalize;">Parent</span>
                     </div>
                 </div>
 
-                <!-- Settings Button -->
                 <button class="nav-control-btn bouncy-btn" id="btn-open-settings" title="Settings" onclick="App.navigateTo('settings')">
                     <img src="/assets/icons/icon-settings.svg" style="width: 20px; height: 20px;" alt="Settings">
                 </button>
 
-                <!-- Switch Account / Lock Screen Button -->
-                <button class="nav-control-btn bouncy-btn" id="btn-lock-top-nav" title="Switch Account / Lock Screen" onclick="App.showAccountOptionsModal()">
-                    <img src="/assets/icons/icon-logout.svg" style="width: 20px; height: 20px;" alt="Lock">
+                <button class="nav-control-btn bouncy-btn" id="btn-lock-top-nav" title="Sign Out" onclick="App.logout()">
+                    <img src="/assets/icons/icon-logout.svg" style="width: 20px; height: 20px;" alt="Sign Out">
                 </button>
             </div>
         </header>
 
-        <!-- Mobile Side Drawer Navigation Overlay -->
-        <div id="mobile-drawer-overlay" class="mobile-drawer-overlay">
-            <div class="mobile-drawer">
-                <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
-                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 800;">
-                        <svg class="icon-svg" style="color: var(--accent-primary);"><use href="#icon-book"/></svg>
-                        <span>SmartSlate Navigation</span>
-                    </div>
-                    <button class="glass-btn glass-btn-icon" id="btn-close-drawer" style="min-width: 36px; min-height: 36px; padding: 4px;">
-                        <svg class="icon-svg"><use href="#icon-x"/></svg>
-                    </button>
-                </div>
-                <div id="drawer-links-container" style="display: flex; flex-direction: column; gap: 8px;"></div>
-            </div>
-        </div>
-
-        <!-- Main View Container Shell -->
+        <!-- Main View Container -->
         <main class="view-container">
-            <!-- 1. Auth View (Login / Signup) -->
             <div id="view-auth" class="view-section" style="display: none;"></div>
-
-            <!-- 2. Student Dashboard -->
-            <div id="view-student" class="view-section" style="display: none;"></div>
-
-            <!-- 3. Teacher Dashboard -->
-            <div id="view-teacher" class="view-section" style="display: none;"></div>
-
-            <!-- 4. Parent Dashboard -->
             <div id="view-parent" class="view-section" style="display: none;"></div>
-
-            <!-- 5. Settings View -->
+            <div id="view-teacher" class="view-section" style="display: none;"></div>
             <div id="view-settings" class="view-section" style="display: none;"></div>
         </main>
 
-        <!-- Bottom Navigation Bar for Mobile / Touch Tablets -->
         <div id="bottom-nav-bar" class="bottom-nav-bar"></div>
     </div>
 
-    <!-- Dynamic Modals Container -->
     <div id="modal-container"></div>
-
-    <!-- Toast Notification Container -->
     <div id="toast-container" class="toast-container"></div>
 
     <!-- JavaScript Dependencies -->
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/api.js"></script>
-    <script src="/js/socket.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="/shared/services/firebaseAuthService.js?v=4.0"></script>
+    <script src="/js/api.js?v=4.0"></script>
     
-    <!-- View & Component Modules -->
-    <script src="/js/views/authView.js"></script>
-    <script src="/js/views/studentView.js"></script>
-    <script src="/js/views/teacherView.js"></script>
-    <script src="/js/views/parentView.js"></script>
-    <script src="/js/views/settingsView.js"></script>
+    <!-- View Modules -->
+    <script src="/js/views/authView.js?v=4.0"></script>
+    <script src="/js/views/parentView.js?v=4.0"></script>
+    <script src="/js/views/teacherView.js?v=4.0"></script>
+    <script src="/js/views/settingsView.js?v=4.0"></script>
 
-    <!-- Main SPA Application Router & Dispatcher -->
-    <script src="/js/app.js"></script>
+    <!-- Main Application Router -->
+    <script src="/js/app.js?v=4.0"></script>
 </body>
 </html>

@@ -21,6 +21,32 @@ android {
         }
     }
 
+    flavorDimensions += "appType"
+    productFlavors {
+        create("student") {
+            dimension = "appType"
+            applicationId = "org.smartslate.student.launcher"
+            versionCode = 1
+            versionName = "1.0.0"
+            manifestPlaceholders["appName"] = "SmartSlate Student"
+            buildConfigField("String", "PORTAL_URL", "\"http://10.42.0.1:3000/\"")
+            buildConfigField("String", "HEALTH_URL", "\"http://10.42.0.1:3000/api/health\"")
+            buildConfigField("String", "APP_NAME_LABEL", "\"SmartSlate Student Tablet\"")
+            buildConfigField("String", "APP_ROLE", "\"student\"")
+        }
+        create("parent") {
+            dimension = "appType"
+            applicationId = "org.smartslate.parent.launcher"
+            versionCode = 1
+            versionName = "1.0.0"
+            manifestPlaceholders["appName"] = "SmartSlate Parent & Teacher"
+            buildConfigField("String", "PORTAL_URL", "\"http://10.42.0.1:3001/\"")
+            buildConfigField("String", "HEALTH_URL", "\"http://10.42.0.1:3001/api/health\"")
+            buildConfigField("String", "APP_NAME_LABEL", "\"SmartSlate Parent & Teacher\"")
+            buildConfigField("String", "APP_ROLE", "\"parent\"")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -39,6 +65,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"

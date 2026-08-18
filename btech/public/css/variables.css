@@ -1,0 +1,34 @@
+/* SmartSlate B.Tech & Engineering Design System Tokens (Professional Glassmorphism) */
+:root {
+    --primary: #3B82F6;
+    --primary-hover: #2563EB;
+    --primary-dark: #1D4ED8;
+    --primary-soft: #EFF6FF;
+    --primary-lighter: #F0F9FF;
+    --primary-border: #BFDBFE;
+    --primary-text: #2563EB;
+    --primary-focus: rgba(59, 130, 246, 0.2);
+
+    --accent-primary: var(--primary);
+    --accent-hover: var(--primary-hover);
+    --accent-secondary: #60A5FA;
+    --accent-light: var(--primary-soft);
+    --accent-focus: var(--primary-focus);
+    --accent-purple: var(--primary);
+    --accent-purple-light: var(--primary-soft);
+
+    --bg-base: #F9FAFB;
+    --surface: rgba(255, 255, 255, 0.85);
+    --paper-bg-primary: #F9FAFB;
+    --paper-bg-secondary: #F3F4F6;
+    --card-surface-base: var(--surface);
+
+    --text-main: #111827;
+    --text-primary: var(--text-main);
+    --text-secondary: #4B5563;
+    --text-muted: #9CA3AF;
+
+    --border-color: rgba(229, 231, 235, 0.8);
+    --border-strong: #D1D5DB;
+    --shadow-glass: 0 8px 32px rgba(59, 130, 246, 0.08);
+}

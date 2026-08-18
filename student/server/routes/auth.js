@@ -61,10 +61,23 @@ router.post('/signup', authRateLimiter, async (req, res) => {
         );
 
         const userId = userRes.id;
+        const targetClassName = req.body.className || req.body.class || '10th Class';
         let assignedClassId = class_id ? parseInt(class_id) : null;
+
         if (!assignedClassId) {
-            const defaultClass = await get("SELECT id FROM classes ORDER BY id ASC LIMIT 1");
-            assignedClassId = defaultClass ? defaultClass.id : null;
+            let targetClass = await get("SELECT id FROM classes WHERE name LIKE ?", [`%${targetClassName}%`]);
+            if (!targetClass) {
+                const defaultTeacher = await get("SELECT id FROM users WHERE role = 'teacher' ORDER BY id ASC LIMIT 1");
+                const teacherId = defaultTeacher ? defaultTeacher.id : 1;
+                const cleanCode = 'CLASS-' + targetClassName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() + '-' + Math.floor(100 + Math.random() * 900);
+                const cRes = await run(
+                    "INSERT INTO classes (name, teacher_id, class_code) VALUES (?, ?, ?)",
+                    [`${targetClassName} — Section A`, teacherId, cleanCode]
+                );
+                assignedClassId = cRes.id;
+            } else {
+                assignedClassId = targetClass.id;
+            }
         }
 
         const sRes = await run(
@@ -84,6 +97,35 @@ router.post('/signup', authRateLimiter, async (req, res) => {
             email: email.toLowerCase().trim(),
             student_code: studentCode
         };
+
+        // Async Cloud Firestore Backup Sync to smartslate-bd117
+        try {
+            const https = require('https');
+            const classCode = (targetClassName.match(/\d+/) || [5])[0];
+            const postData = JSON.stringify({
+                fields: {
+                    studentId: { stringValue: studentCode },
+                    name: { stringValue: name.trim() },
+                    email: { stringValue: email.toLowerCase().trim() },
+                    class: { stringValue: String(classCode) },
+                    className: { stringValue: targetClassName },
+                    educationLevel: { stringValue: req.body.educationLevel || 'secondary' },
+                    section: { stringValue: 'A' },
+                    schoolId: { stringValue: 'SCH-AP-101' },
+                    createdAt: { stringValue: new Date().toISOString() },
+                    updatedAt: { stringValue: new Date().toISOString() }
+                }
+            });
+            const reqFs = https.request({
+                hostname: 'firestore.googleapis.com',
+                path: `/v1/projects/smartslate-bd117/databases/(default)/documents/students?documentId=${studentCode}&key=AIzaSyBOgNWBVqSYfMypeZS8NwRLOYpq7DY3-ls`,
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) }
+            }, () => {});
+            reqFs.on('error', () => {});
+            reqFs.write(postData);
+            reqFs.end();
+        } catch (e) {}
 
         const token = generateToken(newUser);
 
@@ -200,7 +242,12 @@ router.get('/me', authenticateToken, async (req, res) => {
         let extraDetails = {};
         if (user.role === 'student') {
             const studentRow = await get(
-                "SELECT s.id as student_id, s.class_id, c.name as class_name FROM students s LEFT JOIN classes c ON s.class_id = c.id WHERE s.user_id = ?",
+                `SELECT s.id as student_id, s.class_id, c.name as class_name, c.class_code,
+                        t_user.name as teacher_name, t_user.email as teacher_email
+                 FROM students s 
+                 LEFT JOIN classes c ON s.class_id = c.id 
+                 LEFT JOIN users t_user ON c.teacher_id = t_user.id
+                 WHERE s.user_id = ?`,
                 [user.id]
             );
             if (studentRow) extraDetails = studentRow;

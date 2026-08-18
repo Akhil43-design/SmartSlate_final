@@ -1,71 +1,38 @@
-const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-const fs = require('fs');
 
-const dbPath = path.join(__dirname, 'smartslate.db');
-const schemaPath = path.join(__dirname, 'schema.sql');
-
-const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-        console.error('Error opening SQLite database:', err);
-    } else {
-        console.log('Connected to SQLite database at:', dbPath);
-        db.run('PRAGMA foreign_keys = ON;');
-        db.run('PRAGMA journal_mode = WAL;');
-        db.run('PRAGMA synchronous = NORMAL;');
-        db.run('PRAGMA busy_timeout = 5000;');
-    }
-});
-
-// Helper functions wrapping sqlite3 callbacks in Promises
-function run(sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.run(sql, params, function (err) {
-            if (err) return reject(err);
-            resolve({ id: this.lastID, changes: this.changes });
-        });
-    });
+let sharedDb;
+try {
+    sharedDb = require('../../shared/db/database');
+} catch (e) {
+    sharedDb = {
+        get: async () => null,
+        all: async () => [],
+        run: async () => ({ id: null, changes: 0 })
+    };
 }
 
-function get(sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.get(sql, params, (err, row) => {
-            if (err) return reject(err);
-            resolve(row);
-        });
-    });
-}
-
-function all(sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.all(sql, params, (err, rows) => {
-            if (err) return reject(err);
-            resolve(rows);
-        });
-    });
-}
-
-function initDb() {
-    return new Promise((resolve, reject) => {
-        const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-        db.exec(schemaSql, (err) => {
-            if (err) {
-                console.error('Failed to initialize database schema:', err);
-                return reject(err);
-            }
-            // Auto-migrate new columns for exams table
-            db.run("ALTER TABLE exams ADD COLUMN start_time DATETIME", () => {});
-            db.run("ALTER TABLE exams ADD COLUMN end_time DATETIME", () => {});
-            console.log('Database schema initialized successfully.');
-            resolve();
-        });
-    });
+function withTimeout(promise, ms = 2000, fallback = null) {
+    return Promise.race([
+        promise,
+        new Promise((resolve) => setTimeout(() => resolve(fallback), ms))
+    ]);
 }
 
 module.exports = {
-    db,
-    run,
-    get,
-    all,
-    initDb
+    get: (sql, params = []) => withTimeout(
+        typeof sharedDb.get === 'function' ? sharedDb.get(sql, params).catch(() => null) : Promise.resolve(null),
+        2000,
+        null
+    ),
+    all: (sql, params = []) => withTimeout(
+        typeof sharedDb.all === 'function' ? sharedDb.all(sql, params).catch(() => []) : Promise.resolve([]),
+        2000,
+        []
+    ),
+    run: (sql, params = []) => withTimeout(
+        typeof sharedDb.run === 'function' ? sharedDb.run(sql, params).catch(() => ({ id: null, changes: 0 })) : Promise.resolve({ id: null, changes: 0 }),
+        2000,
+        { id: null, changes: 0 }
+    ),
+    initDb: () => (typeof sharedDb.initDb === 'function' ? sharedDb.initDb() : Promise.resolve())
 };

@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
     private var isOffline by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate()
+        super.onCreate(savedInstanceState)
         registerNetworkCallback()
 
         setContent {

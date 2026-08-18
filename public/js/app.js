@@ -1,474 +1,281 @@
-/* SmartSlate Application Core Router & Event Coordinator */
+/* SmartSlate Parent & Teacher Application Controller & Router */
 
 const App = {
     currentUser: null,
     currentView: 'auth',
-    notifications: [],
-
-    showToast(message, type = 'info') {
-        this.toast(message, type);
-    },
 
     async init() {
-        console.log('Initializing SmartSlate Digital OS...');
-        
-        // Alias SocketClient to SocketManager if needed
-        window.SocketClient = window.SocketManager || SocketManager;
+        console.log('Initializing SmartSlate Parent & Teacher Web Portal...');
 
-        // Connect WebSockets
-        SocketManager.init();
-        this.bindGlobalSocketEvents();
-        this.bindNavbarEvents();
-        this.bindNetworkEvents();
+        // 1. Firebase Auth Observer
+        if (window.firebaseAuthService) {
+            window.firebaseAuthService.onAuthStateChanged(async (fbUser) => {
+                if (fbUser && fbUser.email) {
+                    console.log('✅ [Portal Auth] Firebase Auth active for:', fbUser.email);
+                }
+            });
+        }
 
-        // Check authentication state
+        // 2. Local Token / Session Restore
         const token = API.getToken();
-        const loadingScreen = document.getElementById('loading-screen');
-
         if (token) {
             try {
-                const userRes = await API.getMe();
-                this.currentUser = userRes.user;
-                this.loadNotifications();
+                const res = await API.getCurrentUser();
+                this.currentUser = res.user;
+                console.log('✅ [Portal Auth] Restored session for:', this.currentUser.name, `(${this.currentUser.role})`);
+                this.navigateTo(res.user.role);
             } catch (err) {
-                console.warn('Session expired or invalid token. Redirecting to login.');
+                console.warn('Session check failed:', err);
                 API.setToken(null);
+                this.navigateTo('auth');
             }
-        }
-
-        if (loadingScreen) {
-            loadingScreen.style.opacity = '0';
-            setTimeout(() => loadingScreen.style.display = 'none', 300);
-        }
-
-        if (this.currentUser) {
-            this.navigateTo(this.currentUser.role);
         } else {
             this.navigateTo('auth');
         }
+
+        this.hideLoadingScreen();
     },
 
-    bindNetworkEvents() {
-        const offlineBanner = document.getElementById('offline-banner');
-        
-        const updateOnlineStatus = () => {
-            if (navigator.onLine) {
-                if (offlineBanner) offlineBanner.style.display = 'none';
-                this.toast('🟢 Back online — Syncing offline data...', 'success');
-                if (window.API && API.flushOfflineQueue) {
-                    API.flushOfflineQueue();
-                }
-            } else {
-                if (offlineBanner) offlineBanner.style.display = 'flex';
-                this.toast('📡 Wi-Fi Disconnected — Working offline.', 'warning');
-            }
-        };
-
-        window.addEventListener('online', updateOnlineStatus);
-        window.addEventListener('offline', updateOnlineStatus);
-
-        if (!navigator.onLine && offlineBanner) {
-            offlineBanner.style.display = 'flex';
+    hideLoadingScreen() {
+        const screen = document.getElementById('loading-screen');
+        if (screen) {
+            screen.classList.add('hidden');
         }
     },
 
-    bindGlobalSocketEvents() {
-        SocketManager.on('notification', (data) => {
-            App.toast(`🔔 Notification: ${data.message || data.title}`, 'info');
-            App.loadNotifications();
-        });
-
-        SocketManager.on('note_shared', (data) => {
-            App.toast(`📘 Note shared: ${data.title}`, 'success');
-            App.loadNotifications();
-        });
-    },
-
-    bindNavbarEvents() {
-        const bellBtn = document.getElementById('btn-notif-bell');
-        const notifPanel = document.getElementById('notif-panel');
-        const markAllReadBtn = document.getElementById('btn-mark-all-read');
-        const openSettingsBtn = document.getElementById('btn-open-settings');
-        const mobileMenuBtn = document.getElementById('btn-mobile-menu');
-        const drawerOverlay = document.getElementById('mobile-drawer-overlay');
-        const closeDrawerBtn = document.getElementById('btn-close-drawer');
-
-        if (bellBtn && notifPanel) {
-            bellBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isVisible = notifPanel.style.display === 'block';
-                notifPanel.style.display = isVisible ? 'none' : 'block';
-            });
-
-            document.addEventListener('click', (e) => {
-                if (!notifPanel.contains(e.target) && !bellBtn.contains(e.target)) {
-                    notifPanel.style.display = 'none';
-                }
-            });
-        }
-
-        if (mobileMenuBtn && drawerOverlay) {
-            mobileMenuBtn.addEventListener('click', () => {
-                drawerOverlay.classList.add('active');
-            });
-        }
-
-        if (closeDrawerBtn && drawerOverlay) {
-            closeDrawerBtn.addEventListener('click', () => {
-                drawerOverlay.classList.remove('active');
-            });
-        }
-
-        if (drawerOverlay) {
-            drawerOverlay.addEventListener('click', (e) => {
-                if (e.target === drawerOverlay) {
-                    drawerOverlay.classList.remove('active');
-                }
-            });
-        }
-
-        if (markAllReadBtn) {
-            markAllReadBtn.addEventListener('click', async () => {
-                try {
-                    await API.markAllNotificationsRead();
-                    this.loadNotifications();
-                } catch (err) {
-                    console.error('Error marking notifications read:', err);
-                }
-            });
-        }
-
-        if (openSettingsBtn) {
-            openSettingsBtn.addEventListener('click', () => {
-                this.navigateTo('settings');
-            });
-        }
-    },
-
-    async loadNotifications() {
-        try {
-            const data = await API.getNotifications();
-            this.notifications = data.notifications || [];
-            this.renderNotifications();
-        } catch (err) {
-            console.error('Failed to fetch notifications:', err);
-        }
-    },
-
-    renderNotifications() {
-        const badge = document.getElementById('notif-badge-count');
-        const container = document.getElementById('notif-list-container');
-        if (!badge || !container) return;
-
-        const unreadCount = this.notifications.filter(n => !n.read_at).length;
-
-        if (unreadCount > 0) {
-            badge.textContent = unreadCount;
-            badge.style.display = 'inline-block';
-        } else {
-            badge.style.display = 'none';
-        }
-
-        if (!this.notifications.length) {
-            container.innerHTML = `<p style="text-align: center; color: var(--text-muted); padding: 20px;">No notifications yet.</p>`;
-            return;
-        }
-
-        container.innerHTML = this.notifications.map(n => `
-            <div class="glass-card" style="padding: 10px 14px; margin-bottom: 8px; opacity: ${n.read_at ? 0.6 : 1};">
-                <div style="font-size: 13px; color: var(--text-primary); font-weight: ${n.read_at ? '500' : '700'};">${n.message}</div>
-                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">${new Date(n.created_at).toLocaleString()}</div>
-            </div>
-        `).join('');
-    },
-
+    // Strict Role-Based Protected Router
     navigateTo(viewName) {
+        if (!this.currentUser && viewName !== 'auth') {
+            viewName = 'auth';
+        }
+
+        // Role Protection: Ensure users cannot navigate to unauthorized role views
+        if (this.currentUser) {
+            if (this.currentUser.role === 'parent' && viewName === 'teacher') {
+                this.toast('Access Denied: Parent accounts cannot access Teacher Dashboard.', 'danger');
+                viewName = 'parent';
+            } else if (this.currentUser.role === 'teacher' && viewName === 'parent') {
+                this.toast('Access Denied: Teacher accounts use Teacher Dashboard.', 'warning');
+                viewName = 'teacher';
+            }
+        }
+
         this.currentView = viewName;
-
-        // Close mobile drawer if open
-        const drawerOverlay = document.getElementById('mobile-drawer-overlay');
-        if (drawerOverlay) drawerOverlay.classList.remove('active');
-
-        // Hide all view sections
-        document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
-
-        const topNavbar = document.getElementById('top-navbar');
-        const bottomNav = document.getElementById('bottom-nav-bar');
+        const navbar = document.getElementById('top-navbar');
 
         if (viewName === 'auth') {
-            if (topNavbar) topNavbar.style.display = 'none';
-            if (bottomNav) bottomNav.style.display = 'none';
-            const authContainer = document.getElementById('view-auth');
-            authContainer.style.display = 'block';
-            AuthView.render(authContainer);
+            if (navbar) navbar.style.display = 'none';
+        } else {
+            if (navbar) navbar.style.display = 'flex';
+            this.updateHeaderProfile();
+            this.updateNavLinks();
+        }
+
+        const sections = document.querySelectorAll('.view-section');
+        sections.forEach(sec => sec.style.display = 'none');
+
+        const targetSection = document.getElementById(`view-${viewName}`);
+        if (targetSection) {
+            targetSection.style.display = 'block';
+            this.renderViewContent(viewName, targetSection);
+        }
+
+        this.renderBottomNavBar();
+    },
+
+    renderViewContent(viewName, container) {
+        switch (viewName) {
+            case 'auth':
+                AuthView.render(container);
+                break;
+            case 'parent':
+                ParentView.render(container);
+                break;
+            case 'teacher':
+                TeacherView.render(container);
+                break;
+            case 'settings':
+                SettingsView.render(container);
+                break;
+        }
+    },
+
+    updateHeaderProfile() {
+        if (!this.currentUser) return;
+        const nameEl = document.getElementById('user-display-name');
+        const roleEl = document.getElementById('user-display-role');
+        const avatarEl = document.getElementById('user-role-avatar');
+        if (nameEl) nameEl.textContent = this.currentUser.name;
+        if (roleEl) roleEl.textContent = this.currentUser.role === 'teacher' ? 'Class Teacher' : 'Parent / Guardian';
+        if (avatarEl) avatarEl.textContent = this.currentUser.role === 'teacher' ? '👩‍🏫' : '👨‍👩‍👦';
+    },
+
+    updateNavLinks() {
+        const linksContainer = document.getElementById('nav-dynamic-links');
+        if (!linksContainer || !this.currentUser) return;
+
+        if (this.currentUser.role === 'parent') {
+            linksContainer.innerHTML = `
+                <button class="nav-link-btn ${this.currentView === 'parent' ? 'active' : ''}" onclick="App.navigateTo('parent')">
+                    <img src="/assets/icons/icon-child-profile.svg" class="nav-link-icon" alt="Parent">
+                    <span>Parent Dashboard</span>
+                </button>
+                <button class="nav-link-btn ${this.currentView === 'settings' ? 'active' : ''}" onclick="App.navigateTo('settings')">
+                    <img src="/assets/icons/icon-settings.svg" class="nav-link-icon" alt="Settings">
+                    <span>Settings</span>
+                </button>
+            `;
+        } else {
+            linksContainer.innerHTML = `
+                <button class="nav-link-btn ${this.currentView === 'teacher' ? 'active' : ''}" onclick="App.navigateTo('teacher')">
+                    <img src="/assets/icons/icon-teacher.svg" class="nav-link-icon" alt="Teacher">
+                    <span>Teacher Dashboard</span>
+                </button>
+                <button class="nav-link-btn ${this.currentView === 'settings' ? 'active' : ''}" onclick="App.navigateTo('settings')">
+                    <img src="/assets/icons/icon-settings.svg" class="nav-link-icon" alt="Settings">
+                    <span>Settings</span>
+                </button>
+            `;
+        }
+    },
+
+    switchParentTab(tabName) {
+        this.navigateTo('parent');
+        if (window.ParentView) {
+            ParentView.activeTab = tabName;
+            const container = document.querySelector('#view-parent');
+            if (container) {
+                container.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.toggle('active', b.dataset.tab === tabName);
+                });
+                const contentArea = container.querySelector('#parent-active-tab-content');
+                if (contentArea) ParentView.renderActiveTabContent(contentArea);
+            }
+        }
+        this.renderBottomNavBar();
+    },
+
+    switchTeacherTab(tabName) {
+        this.navigateTo('teacher');
+        if (window.TeacherView) {
+            TeacherView.activeTab = tabName;
+            const container = document.querySelector('#view-teacher');
+            if (container) {
+                container.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.toggle('active', b.dataset.tab === tabName);
+                });
+                const contentArea = container.querySelector('#teacher-tab-content');
+                if (contentArea) TeacherView.renderTabContent(contentArea);
+            }
+        }
+        this.renderBottomNavBar();
+    },
+
+    renderBottomNavBar() {
+        const nav = document.getElementById('bottom-nav-bar');
+        if (!nav) return;
+
+        if (this.currentView === 'auth' || !this.currentUser) {
+            nav.style.display = 'none';
             return;
         }
 
-        // Display Navbar & Bottom Nav for authenticated users
-        if (topNavbar) {
-            topNavbar.style.display = 'flex';
-        }
-        if (bottomNav) {
-            bottomNav.style.display = 'flex';
-        }
-
-        if (this.currentUser) {
-            const userDisplayName = document.getElementById('user-display-name');
-            const userDisplayRole = document.getElementById('user-display-role');
-            const userRoleAvatar = document.getElementById('user-role-avatar');
-            const roleTagline = document.getElementById('nav-role-tagline');
-
-            if (userDisplayName) userDisplayName.textContent = this.currentUser.name;
-            if (userDisplayRole) userDisplayRole.textContent = this.currentUser.role;
-            if (userRoleAvatar) {
-                userRoleAvatar.textContent = this.currentUser.role === 'student' ? '👨‍🎓' : this.currentUser.role === 'teacher' ? '👩‍🏫' : '👨‍👩‍👦';
-            }
-            if (roleTagline) {
-                roleTagline.textContent = this.currentUser.role === 'student' ? 'Child OS' : this.currentUser.role === 'teacher' ? 'Teacher Portal' : 'Parent Companion';
-            }
-        }
-
-        this.renderNavbarLinks();
-
-        switch (viewName) {
-            case 'student':
-                const studentContainer = document.getElementById('view-student');
-                studentContainer.style.display = 'block';
-                StudentView.render(studentContainer);
-                break;
-            case 'teacher':
-                const teacherContainer = document.getElementById('view-teacher');
-                teacherContainer.style.display = 'block';
-                TeacherView.render(teacherContainer);
-                break;
-            case 'parent':
-                const parentContainer = document.getElementById('view-parent');
-                parentContainer.style.display = 'block';
-                ParentView.render(parentContainer);
-                break;
-            case 'settings':
-                const settingsContainer = document.getElementById('view-settings');
-                settingsContainer.style.display = 'block';
-                SettingsView.render(settingsContainer);
-                break;
-            default:
-                this.render404View();
-                break;
-        }
-    },
-
-    render404View() {
-        const studentContainer = document.getElementById('view-student');
-        studentContainer.style.display = 'block';
-        studentContainer.innerHTML = `
-            <div class="glass-card" style="text-align: center; padding: 60px 20px; max-width: 500px; margin: 40px auto;">
-                <img src="/assets/icons/icon-error-warning.svg" style="width: 48px; height: 48px; margin-bottom: 16px;" alt="404">
-                <h2>Page Not Found</h2>
-                <p style="color: var(--text-secondary); margin: 12px 0 24px 0;">The page or section you requested is not available.</p>
-                <button class="glass-btn glass-btn-primary" onclick="App.navigateTo('${this.currentUser ? this.currentUser.role : 'auth'}')">Return to Dashboard</button>
-            </div>
-        `;
-    },
-
-    renderNavbarLinks() {
-        const navContainer = document.getElementById('nav-dynamic-links');
-        const drawerContainer = document.getElementById('drawer-links-container');
-        const bottomNav = document.getElementById('bottom-nav-bar');
-        if (!this.currentUser) return;
-
-        const role = this.currentUser.role;
-        let links = [];
-
-        if (role === 'student') {
-            links = [
-                { view: 'student', tab: 'books', label: 'My Books', icon: '/assets/icons/icon-bookshelf.svg' },
-                { view: 'student', tab: 'assignments', label: 'Tasks', icon: '/assets/icons/icon-assignment.svg' },
-                { view: 'student', tab: 'teacher', label: 'My Teacher', icon: '/assets/icons/icon-chat-teacher.svg' },
-                { view: 'student', tab: 'exams', label: 'Exams', icon: '/assets/icons/icon-exam.svg' },
-                { view: 'student', tab: 'attendance', label: 'Attendance', icon: '/assets/icons/icon-attendance-chart.svg' }
-            ];
-        } else if (role === 'teacher') {
-            links = [
-                { view: 'teacher', tab: 'overview', label: 'Roster & Attendance', icon: '/assets/icons/icon-student-table.svg' },
-                { view: 'teacher', tab: 'assignments', label: 'Assignments', icon: '/assets/icons/icon-assignment.svg' },
-                { view: 'teacher', tab: 'exams', label: 'Exams', icon: '/assets/icons/icon-exam.svg' },
-                { view: 'teacher', tab: 'announcements', label: 'Announcements', icon: '/assets/icons/icon-chat-group.svg' }
-            ];
-        } else if (role === 'parent') {
-            links = [
-                { view: 'parent', tab: 'overview', label: 'Report Card', icon: '/assets/icons/icon-progress-card.svg' },
-                { view: 'parent', tab: 'attendance', label: 'Attendance', icon: '/assets/icons/icon-attendance-chart.svg' },
-                { view: 'parent', tab: 'alerts', label: 'Alerts', icon: '/assets/icons/icon-notification-bell.svg' }
-            ];
-        }
-
-        if (navContainer) {
-            navContainer.innerHTML = links.map(link => {
-                let isActive = false;
-                if (role === 'student' && StudentView.activeTab === link.tab) isActive = true;
-                if (role === 'teacher' && TeacherView.activeTab === link.tab) isActive = true;
-                if (role === 'parent' && ParentView.activeTab === link.tab) isActive = true;
-
-                return `
-                    <button class="nav-link-btn bouncy-btn ${isActive ? 'active' : ''}" data-view="${link.view}" data-tab="${link.tab}">
-                        <img src="${link.icon}" class="nav-link-icon" alt="${link.label}">
-                        <span>${link.label}</span>
-                    </button>
-                `;
-            }).join('');
-
-            navContainer.querySelectorAll('button').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const targetView = e.currentTarget.dataset.view;
-                    const targetTab = e.currentTarget.dataset.tab;
-
-                    if (role === 'student') StudentView.activeTab = targetTab;
-                    if (role === 'teacher') TeacherView.activeTab = targetTab;
-                    if (role === 'parent') ParentView.activeTab = targetTab;
-
-                    this.navigateTo(targetView);
-                });
-            });
-        }
-
-        if (drawerContainer) {
-            drawerContainer.innerHTML = links.map(link => `
-                <button class="glass-btn bouncy-btn" data-view="${link.view}" data-tab="${link.tab}" style="width: 100%; justify-content: flex-start; gap: 12px; margin-bottom: 8px;">
-                    <img src="${link.icon}" style="width: 20px; height: 20px;" alt="${link.label}">
-                    <span>${link.label}</span>
-                </button>
-            `).join('');
-
-            drawerContainer.querySelectorAll('button').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const targetView = e.currentTarget.dataset.view;
-                    const targetTab = e.currentTarget.dataset.tab;
-
-                    if (role === 'student') StudentView.activeTab = targetTab;
-                    if (role === 'teacher') TeacherView.activeTab = targetTab;
-                    if (role === 'parent') ParentView.activeTab = targetTab;
-
-                    this.navigateTo(targetView);
-                });
-            });
-        }
-
-        if (bottomNav) {
-            const bottomItems = [
-                { id: 'settings', label: 'Settings', icon: '/assets/icons/icon-settings.svg' },
-                { id: 'share', label: 'Share', icon: '/assets/icons/icon-share-menu.svg' },
-                { id: 'account', label: 'Account', icon: '/assets/icons/icon-account-menu.svg' }
-            ];
-
-            bottomNav.innerHTML = bottomItems.map(item => `
-                <div class="bottom-nav-item ${this.currentView === item.id ? 'active' : ''}" data-action="${item.id}">
-                    <img src="${item.icon}" style="width: 22px; height: 22px;" alt="${item.label}">
-                    <span>${item.label}</span>
+        nav.style.display = 'flex';
+        if (this.currentUser.role === 'parent') {
+            const pTab = window.ParentView?.activeTab || 'overview';
+            nav.innerHTML = `
+                <div class="bottom-nav-item ${this.currentView === 'parent' && pTab === 'overview' ? 'active' : ''}" onclick="App.switchParentTab('overview')">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                    <span>Dashboard</span>
                 </div>
-            `).join('');
-
-            bottomNav.querySelectorAll('.bottom-nav-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    const action = e.currentTarget.dataset.action;
-                    if (action === 'settings') {
-                        this.navigateTo('settings');
-                    } else if (action === 'share') {
-                        this.showGlobalShareModal();
-                    } else if (action === 'account') {
-                        this.showAccountOptionsModal();
-                    }
-                });
-            });
+                <div class="bottom-nav-item ${this.currentView === 'parent' && pTab === 'exams' ? 'active' : ''}" onclick="App.switchParentTab('exams')">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                    <span>Exams</span>
+                </div>
+                <div class="bottom-nav-item ${this.currentView === 'parent' && pTab === 'notes' ? 'active' : ''}" onclick="App.switchParentTab('notes')">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    <span>Notes</span>
+                </div>
+                <div class="bottom-nav-item ${this.currentView === 'parent' && pTab === 'searches' ? 'active' : ''}" onclick="App.switchParentTab('searches')">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <span>Search</span>
+                </div>
+                <div class="bottom-nav-item ${this.currentView === 'settings' ? 'active' : ''}" onclick="App.navigateTo('settings')">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    <span>Settings</span>
+                </div>
+            `;
+        } else {
+            const tTab = window.TeacherView?.activeTab || 'overview';
+            nav.innerHTML = `
+                <div class="bottom-nav-item ${this.currentView === 'teacher' && tTab === 'overview' ? 'active' : ''}" onclick="App.switchTeacherTab('overview')">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <span>Roster</span>
+                </div>
+                <div class="bottom-nav-item ${this.currentView === 'teacher' && tTab === 'exams' ? 'active' : ''}" onclick="App.switchTeacherTab('exams')">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                    <span>Exams</span>
+                </div>
+                <div class="bottom-nav-item ${this.currentView === 'teacher' && tTab === 'assignments' ? 'active' : ''}" onclick="App.switchTeacherTab('assignments')">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    <span>Assign</span>
+                </div>
+                <div class="bottom-nav-item ${this.currentView === 'teacher' && tTab === 'chat' ? 'active' : ''}" onclick="App.switchTeacherTab('chat')">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <span>Announce</span>
+                </div>
+                <div class="bottom-nav-item ${this.currentView === 'settings' ? 'active' : ''}" onclick="App.navigateTo('settings')">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    <span>Settings</span>
+                </div>
+            `;
         }
     },
 
-    showGlobalShareModal() {
-        this.showModal(`
-            <div class="modal-card">
-                <div class="modal-header">
-                    <h3 class="modal-title">Share Center</h3>
-                    <button class="modal-close" onclick="App.closeModal()">✕</button>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 12px; padding: 10px 0;">
-                    <button class="glass-btn glass-btn-secondary bouncy-btn" onclick="App.closeModal(); if(App.currentUser && App.currentUser.role === 'student') StudentView.activeTab='chat'; App.navigateTo(App.currentUser.role);" style="justify-content: flex-start; padding: 14px;">
-                        <img src="/assets/icons/icon-share-note.svg" style="width: 24px; height: 24px;" alt="Share Note">
-                        <span>Share Notebook Page with Classmate</span>
-                    </button>
-                    <button class="glass-btn glass-btn-secondary bouncy-btn" onclick="App.closeModal(); App.toast('Copied SmartSlate local kiosk link to clipboard! 📋', 'success');" style="justify-content: flex-start; padding: 14px;">
-                        <img src="/assets/icons/icon-share-file.svg" style="width: 24px; height: 24px;" alt="Share Link">
-                        <span>Copy Local Wi-Fi Tablet Link</span>
-                    </button>
-                </div>
-            </div>
-        `);
+    async logout() {
+        if (window.firebaseAuthService) {
+            await window.firebaseAuthService.signOut().catch(() => {});
+        }
+        await API.logout();
+        API.setToken(null);
+        this.currentUser = null;
+        this.navigateTo('auth');
+        this.toast('Signed out from portal.', 'info');
     },
 
-    showAccountOptionsModal() {
-        this.showModal(`
-            <div class="modal-card" style="text-align: center;">
-                <div class="modal-header">
-                    <h3 class="modal-title">Account & Security</h3>
-                    <button class="modal-close" onclick="App.closeModal()">✕</button>
-                </div>
-                <div style="margin: 16px 0;">
-                    <div style="font-size: 48px; margin-bottom: 8px;">👤</div>
-                    <h3 style="font-size: 20px; font-weight: 700;">${this.currentUser ? this.currentUser.name : 'User'}</h3>
-                    <span class="glass-badge glass-badge-accent" style="text-transform: capitalize; margin-top: 4px;">${this.currentUser ? this.currentUser.role : ''}</span>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
-                    <button class="glass-btn glass-btn-secondary bouncy-btn" onclick="App.closeModal(); AuthView.selectedAccount=null; App.navigateTo('auth');">
-                        <img src="/assets/icons/icon-account-select.svg" style="width: 20px; height: 20px;" alt="Switch">
-                        <span>Switch Account / Lock Screen</span>
-                    </button>
-                    <button class="glass-btn bouncy-btn" style="color: var(--status-danger);" onclick="App.closeModal(); API.setToken(null); App.currentUser=null; App.navigateTo('auth');">
-                        <img src="/assets/icons/icon-logout.svg" style="width: 20px; height: 20px;" alt="Logout">
-                        <span>Log Out</span>
-                    </button>
-                </div>
-            </div>
-        `);
-    },
-
-    // Modal Helper
-    showModal(htmlContent) {
-        const container = document.getElementById('modal-container');
-        container.innerHTML = `
-            <div class="modal-overlay active" id="modal-backdrop">
-                ${htmlContent}
-            </div>
-        `;
-        document.getElementById('modal-backdrop').addEventListener('click', (e) => {
-            if (e.target.id === 'modal-backdrop') {
-                this.closeModal();
-            }
-        });
-    },
-
-    closeModal() {
-        const container = document.getElementById('modal-container');
-        container.innerHTML = '';
-    },
-
-    // Toast Notification Helper
     toast(message, type = 'info') {
         const container = document.getElementById('toast-container');
         if (!container) return;
 
-        const toastEl = document.createElement('div');
-        toastEl.className = `toast toast-${type}`;
-        toastEl.innerHTML = `
-            <span>${message}</span>
-        `;
-        container.appendChild(toastEl);
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
 
+        container.appendChild(toast);
         setTimeout(() => {
-            toastEl.style.opacity = '0';
-            setTimeout(() => toastEl.remove(), 300);
-        }, 3500);
+            toast.remove();
+        }, 4000);
+    },
+
+    showToast(message, type = 'info') {
+        return this.toast(message, type);
+    },
+
+    showModal(htmlContent) {
+        const container = document.getElementById('modal-container');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="modal-overlay active" id="modal-overlay-bg">
+                ${htmlContent}
+            </div>
+        `;
+    },
+
+    closeModal() {
+        const container = document.getElementById('modal-container');
+        if (container) container.innerHTML = '';
     }
 };
 
-// Initialize Application when DOM ready
-document.addEventListener('DOMContentLoaded', () => {
-    App.init();
-});
+document.addEventListener('DOMContentLoaded', () => App.init());

@@ -1,0 +1,32 @@
+[Unit]
+Description=SmartSlate Complete Educational Platform Appliance
+Documentation=https://github.com/Akhil43-design/SmartSlate
+After=network-online.target time-sync.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/smartslate
+Environment=NODE_ENV=production
+Environment=HOST=0.0.0.0
+Environment=PATH=/usr/local/bin:/usr/bin:/bin:/home/pi/.nvm/versions/node/v18.20.0/bin:/home/pi/.nvm/versions/node/v20.0.0/bin
+
+# Master startup and shutdown scripts
+ExecStart=/home/pi/smartslate/start-smartslate.sh
+ExecStop=/home/pi/smartslate/stop-smartslate.sh
+ExecReload=/home/pi/smartslate/stop-smartslate.sh ; /home/pi/smartslate/start-smartslate.sh
+
+# Restart policy for 24/7 reliability on Raspberry Pi 2 W
+Restart=on-failure
+RestartSec=10
+TimeoutStartSec=60
+TimeoutStopSec=30
+KillMode=mixed
+
+# Resource limits suitable for Raspberry Pi 2 W (512MB RAM)
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

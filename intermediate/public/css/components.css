@@ -1,0 +1,220 @@
+/* SmartSlate Unified Reusable Component System */
+
+/* 1. Elevated Card Surfaces */
+.glass-panel {
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--glass-shadow);
+    border-radius: var(--radius-lg);
+}
+
+.glass-card {
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--glass-shadow);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.glass-card.interactive:hover, .glass-card.interactive:active {
+    transform: translateY(-2px);
+    box-shadow: var(--glass-shadow-hover);
+    border-color: var(--primary-border);
+    cursor: pointer;
+}
+
+/* 2. Button System (Primary, Secondary, Ghost, Icon) */
+.glass-btn, .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    min-height: 42px;
+    font-family: inherit;
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 2px rgba(21, 26, 45, 0.02);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    outline: none;
+    touch-action: manipulation;
+    white-space: nowrap;
+}
+
+.glass-btn:hover, .btn:hover {
+    background: var(--paper-bg-secondary);
+    border-color: #D5D2E2;
+}
+
+.glass-btn:active, .btn:active {
+    transform: translateY(1px);
+}
+
+.glass-btn:focus-visible, .btn:focus-visible {
+    box-shadow: 0 0 0 3px var(--primary-focus);
+    border-color: var(--primary);
+}
+
+.glass-btn:disabled, .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Primary Button (#8864F3) */
+.glass-btn-primary, .btn-primary {
+    background: var(--primary);
+    color: #FFFFFF !important;
+    border: 1px solid var(--primary);
+    box-shadow: 0 2px 8px rgba(136, 100, 243, 0.28);
+    font-weight: 700;
+}
+
+.glass-btn-primary:hover, .btn-primary:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+    box-shadow: 0 4px 14px rgba(136, 100, 243, 0.38);
+}
+
+.glass-btn-primary:active, .btn-primary:active {
+    background: var(--primary-dark);
+}
+
+/* Secondary Button */
+.glass-btn-secondary, .btn-secondary {
+    background: var(--surface);
+    color: var(--primary) !important;
+    border: 1px solid var(--border-color);
+    font-weight: 600;
+}
+
+.glass-btn-secondary:hover, .btn-secondary:hover {
+    background: var(--primary-soft);
+    border-color: var(--primary-border);
+}
+
+/* Ghost Button */
+.glass-btn-ghost, .btn-ghost {
+    background: transparent;
+    color: var(--primary) !important;
+    border: 1px solid transparent;
+    box-shadow: none;
+}
+
+.glass-btn-ghost:hover, .btn-ghost:hover {
+    background: var(--primary-soft);
+}
+
+.glass-btn-sm {
+    padding: 6px 12px;
+    min-height: 36px;
+    font-size: var(--font-size-sm);
+    border-radius: var(--radius-sm);
+}
+
+.glass-btn-icon {
+    padding: 8px;
+    border-radius: var(--radius-pill);
+    min-width: 40px;
+    min-height: 40px;
+}
+
+/* 3. Inputs, Selects & Textareas */
+.glass-input, .glass-select, .glass-textarea {
+    width: 100%;
+    padding: 12px 16px;
+    font-family: inherit;
+    font-size: var(--font-size-base);
+    color: var(--text-primary);
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    outline: none;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    user-select: text;
+}
+
+.glass-input:focus, .glass-select:focus, .glass-textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-focus);
+    background: var(--surface);
+}
+
+.glass-input::placeholder, .glass-textarea::placeholder {
+    color: var(--text-muted);
+}
+
+/* 4. Status Badges & Pills */
+.glass-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    border-radius: var(--radius-pill);
+    background: var(--paper-bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.glass-badge-accent {
+    background: var(--primary-soft);
+    color: var(--primary);
+    border-color: var(--primary-border);
+}
+
+.glass-badge-success {
+    background: var(--status-success-bg);
+    color: var(--status-success);
+    border-color: rgba(16, 185, 129, 0.25);
+}
+
+.glass-badge-warning {
+    background: var(--status-warning-bg);
+    color: var(--status-warning);
+    border-color: rgba(245, 158, 11, 0.25);
+}
+
+.glass-badge-danger {
+    background: var(--status-error-bg);
+    color: var(--status-error);
+    border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* 5. Toolbars & Containers */
+.view-container {
+    padding: 24px 32px 64px 32px;
+    flex: 1;
+    max-width: 1500px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.dashboard-header {
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.dashboard-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.4px;
+}
+
+.dashboard-subtitle {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-top: 4px;
+}

@@ -109,42 +109,44 @@ class ParentRepository(
 
     private fun getMockChildren(parentUserId: String): List<Student> {
         return listOf(
-            Student("s1", "u_s1", "Aarav Mehta", "STU-1001", "c101", "Class 10-A"),
-            Student("s6", "u_s6", "Diya Mehta", "STU-1006", "c103", "Class 9-A")
+            Student("s1", "u_s1", "Alex Rivera", "STU-101", "c101", "Grade 5 Alpha"),
+            Student("s2", "u_s2", "Maya Rivera", "STU-102", "c101", "Grade 5 Alpha")
         )
     }
 
     private fun getMockAttendance(studentId: String): List<Attendance> {
+        val studentName = if (studentId == "s2") "Maya Rivera" else "Alex Rivera"
         return listOf(
-            Attendance("att1", "c101", "Class 10-A", studentId, "Aarav Mehta", "t1", "2026-08-10", "present"),
-            Attendance("att2", "c101", "Class 10-A", studentId, "Aarav Mehta", "t1", "2026-08-09", "present"),
-            Attendance("att3", "c101", "Class 10-A", studentId, "Aarav Mehta", "t1", "2026-08-08", "present"),
-            Attendance("att4", "c101", "Class 10-A", studentId, "Aarav Mehta", "t1", "2026-08-07", "late"),
-            Attendance("att5", "c101", "Class 10-A", studentId, "Aarav Mehta", "t1", "2026-08-06", "present"),
-            Attendance("att6", "c101", "Class 10-A", studentId, "Aarav Mehta", "t1", "2026-08-05", "absent")
+            Attendance("att1", "c101", "Grade 5 Alpha", studentId, studentName, "t1", "2026-08-10", "present"),
+            Attendance("att2", "c101", "Grade 5 Alpha", studentId, studentName, "t1", "2026-08-09", "present"),
+            Attendance("att3", "c101", "Grade 5 Alpha", studentId, studentName, "t1", "2026-08-08", "present"),
+            Attendance("att4", "c101", "Grade 5 Alpha", studentId, studentName, "t1", "2026-08-07", "late"),
+            Attendance("att5", "c101", "Grade 5 Alpha", studentId, studentName, "t1", "2026-08-06", "present")
         )
     }
 
     private fun getMockSubmissions(studentId: String): List<Submission> {
         val now = Timestamp.now()
         val formatted = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(now.toDate())
+        val studentName = if (studentId == "s2") "Maya Rivera" else "Alex Rivera"
+        val grade = if (studentId == "s2") 92.0 else 95.0
+        val feedback = if (studentId == "s2") "Great diagram, Maya!" else "Excellent work, Alex!"
         return listOf(
-            Submission("sub1", "a1", "Quadratic Equations Problem Set", studentId, "Aarav Mehta", "Completed solutions for Q1-Q15.", now, formatted, "graded", 95.0, 100.0, "Excellent work! Keep it up.", now),
-            Submission("sub2", "a2", "Trigonometry Basics Quiz", studentId, "Aarav Mehta", "Submitted quiz responses.", now, formatted, "graded", 90.0, 100.0, "Great understanding of identities.", now),
-            Submission("sub3", "a3", "Newton's Laws Lab Report", studentId, "Aarav Mehta", "Draft laboratory report.", now, formatted, "submitted", null, 100.0, "Under evaluation by teacher.", null)
+            Submission("sub1", "a1", "Science Report: Plant Ecosystems", studentId, studentName, "Photosynthesis is the process by which green plants use sunlight to synthesize nutrients.", now, formatted, "graded", grade, 100.0, feedback, now),
+            Submission("sub2", "a2", "Mathematics: Fractions & Ratios", studentId, studentName, "Solved exercises 1 to 10 on page 42.", now, formatted, "submitted", null, 100.0, "Under evaluation by teacher.", null)
         )
     }
 
     private fun getMockProgress(studentId: String): StudentProgress {
         return StudentProgress(
             studentId = studentId,
-            attendancePercentage = 92.5,
-            assignmentCompletionPercentage = 95.0,
-            averagePercentage = 92.8,
-            totalAssignments = 12,
-            completedAssignments = 11,
+            attendancePercentage = 95.0,
+            assignmentCompletionPercentage = 100.0,
+            averagePercentage = 93.5,
+            totalAssignments = 10,
+            completedAssignments = 10,
             totalClasses = 40,
-            presentClasses = 37,
+            presentClasses = 38,
             updatedAt = Timestamp.now()
         )
     }
@@ -152,8 +154,8 @@ class ParentRepository(
     private fun getMockAnnouncements(classId: String): List<Announcement> {
         val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
         return listOf(
-            Announcement("anc1", "t1", "Prof. Sharma", classId, "Class 10-A", "Mid-Term Examination Schedule", "The Mathematics mid-term exam will take place on Monday, Aug 18th at 09:00 AM.", "high", Timestamp.now(), dateFormat.format(Date())),
-            Announcement("anc2", "t1", "Prof. Sharma", classId, "Class 10-A", "Parent-Teacher Conference", "Quarterly progress review meeting scheduled for Saturday, Aug 23rd.", "normal", Timestamp.now(), dateFormat.format(Date()))
+            Announcement("anc1", "t1", "Prof. Sarah Lin", classId, "Grade 5 Alpha", "Mid-Term Examination Schedule", "The Science & Math mid-term assessment will take place on Monday, Aug 18th at 09:00 AM.", "high", Timestamp.now(), dateFormat.format(Date())),
+            Announcement("anc2", "t1", "Prof. Sarah Lin", classId, "Grade 5 Alpha", "Parent-Teacher Conference", "Quarterly progress review meeting scheduled for Saturday, Aug 23rd.", "normal", Timestamp.now(), dateFormat.format(Date()))
         )
     }
 }

@@ -181,17 +181,16 @@
 }
 
 .modal-card {
-    width: 100%;
-    max-width: 560px;
-    max-height: 85vh;
+    width: min(560px, calc(100% - 24px));
+    max-height: 88vh;
     overflow-y: auto;
-    background: rgba(247, 246, 243, 0.95);
+    background: rgba(247, 246, 243, 0.96);
     backdrop-filter: var(--glass-backdrop-filter);
     border: var(--glass-border);
     box-shadow: var(--glass-shadow-hover);
     border-radius: var(--radius-lg);
-    padding: 28px;
-    transform: scale(0.94);
+    padding: clamp(16px, 4vw, 24px);
+    transform: scale(0.96);
     transition: transform var(--transition-normal);
 }
 

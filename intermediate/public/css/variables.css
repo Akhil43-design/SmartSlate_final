@@ -1,0 +1,34 @@
+/* SmartSlate Intermediate & Diploma Design System Tokens (Professional Glassmorphism) */
+:root {
+    --primary: #6366F1;
+    --primary-hover: #4F46E5;
+    --primary-dark: #4338CA;
+    --primary-soft: #EEF2FF;
+    --primary-lighter: #F5F3FF;
+    --primary-border: #C7D2FE;
+    --primary-text: #4F46E5;
+    --primary-focus: rgba(99, 102, 241, 0.2);
+
+    --accent-primary: var(--primary);
+    --accent-hover: var(--primary-hover);
+    --accent-secondary: #818CF8;
+    --accent-light: var(--primary-soft);
+    --accent-focus: var(--primary-focus);
+    --accent-purple: var(--primary);
+    --accent-purple-light: var(--primary-soft);
+
+    --bg-base: #F8FAFC;
+    --surface: rgba(255, 255, 255, 0.85);
+    --paper-bg-primary: #F8FAFC;
+    --paper-bg-secondary: #F1F5F9;
+    --card-surface-base: var(--surface);
+
+    --text-main: #0F172A;
+    --text-primary: var(--text-main);
+    --text-secondary: #475569;
+    --text-muted: #94A3B8;
+
+    --border-color: rgba(226, 232, 240, 0.8);
+    --border-strong: #CBD5E1;
+    --shadow-glass: 0 8px 32px rgba(99, 102, 241, 0.08);
+}

@@ -27,6 +27,14 @@ app.use(express.urlencoded({ extended: true }));
 
 const publicPath = path.join(__dirname, '../public');
 app.use(express.static(publicPath));
+app.use('/shared', express.static(path.join(__dirname, '../public/shared')));
+
+const localParentRoutes = require('../backend/routes/local-parent');
+const localTeacherRoutes = require('../backend/routes/local-teacher');
+app.use('/api/local/parent', localParentRoutes);
+app.use('/api/local/teacher', localTeacherRoutes);
+
+const notesRoutes = require('./routes/notes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/parent', parentRoutes);
@@ -36,6 +44,12 @@ app.use('/api/exams', examsRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/notes', notesRoutes);
+app.use('/api/debug', require('../../shared/routes/debugStudent'));
+
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', app: 'SmartSlate-Parent-Teacher', version: '1.0.0', uptime: process.uptime() });
+});
 
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', app: 'SmartSlate-Parent-Teacher', version: '1.0.0', uptime: process.uptime() });

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SmartSlate — Main Learning Gateway</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            --card-glass: rgba(255, 255, 255, 0.07);
+            --card-border: rgba(255, 255, 255, 0.15);
+            --text-main: #f8fafc;
+            --text-sub: #cbd5e1;
+            --accent-glow: rgba(124, 58, 237, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        /* 1. LOADING SCREEN */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            background: #0f172a;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        #loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .spinner-container {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin-bottom: 24px;
+        }
+
+        .pulse-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(168,85,247,0.4) 0%, rgba(0,0,0,0) 70%);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .brand-icon {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.15); opacity: 1; }
+        }
+
+        .brand-title {
+            font-size: 36px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .loading-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-sub);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* 2. GATEWAY CONTAINER */
+        .gateway-container {
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.8s ease forwards 0.4s;
+        }
+
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .gateway-header {
+            margin-bottom: 48px;
+        }
+
+        .gateway-header h1 {
+            font-size: 44px;
+            font-weight: 900;
+            letter-spacing: -1px;
+            margin-bottom: 12px;
+        }
+
+        .gateway-header p {
+            font-size: 18px;
+            color: var(--text-sub);
+            font-weight: 600;
+        }
+
+        /* 3. FOUR CIRCULAR OPTIONS GRID */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 28px;
+            width: 100%;
+            padding: 10px;
+        }
+
+        @media (max-width: 900px) {
+            .options-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 500px) {
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .option-card {
+            background: var(--card-glass);
+            border: 2px solid var(--card-border);
+            border-radius: 32px;
+            padding: 36px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            backdrop-filter: blur(12px);
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .option-card:hover {
+            transform: translateY(-10px) scale(1.03);
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(168, 85, 247, 0.5);
+            box-shadow: 0 20px 40px -15px var(--accent-glow);
+        }
+
+        .circle-avatar {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 52px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .option-card:hover .circle-avatar {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        /* Distinct Color Accents for Category Circles */
+        .card-elem .circle-avatar { background: linear-gradient(135deg, #ff7e5f, #feb47b); }
+        .card-high .circle-avatar { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+        .card-inter .circle-avatar { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+        .card-btech .circle-avatar { background: linear-gradient(135deg, #fa709a, #fee140); }
+
+        .option-title {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .option-desc {
+            font-size: 13px;
+            color: var(--text-sub);
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .portal-link-footer {
+            margin-top: 56px;
+            font-size: 14px;
+            color: var(--text-sub);
+        }
+
+        .portal-link-footer a {
+            color: #a855f7;
+            text-decoration: none;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. LOADING SCREEN -->
+    <div id="loading-screen">
+        <div class="spinner-container">
+            <div class="pulse-ring"></div>
+            <div class="brand-icon">🎓</div>
+        </div>
+        <div class="brand-title">SMARTSLATE</div>
+        <div class="loading-text">Initializing Gateway...</div>
+    </div>
+
+    <!-- 2. MAIN GATEWAY SELECTION UI -->
+    <div class="gateway-container">
+        <div class="gateway-header">
+            <div style="font-size: 54px; margin-bottom: 12px;">🎓</div>
+            <h1 class="brand-title" style="font-size: 48px;">SMARTSLATE</h1>
+            <p>Select your learning level to enter your dedicated portal</p>
+        </div>
+
+        <div class="options-grid">
+            <!-- OPTION 1: ELEMENTARY -->
+            <a href="http://localhost:3002" class="option-card card-elem">
+                <div class="circle-avatar">🧒</div>
+                <div class="option-title">ELEMENTARY</div>
+                <div class="option-desc">Kindergarten / Primary<br>Below 5th Class</div>
+            </a>
+
+            <!-- OPTION 2: HIGH SCHOOL -->
+            <a href="http://localhost:3003" class="option-card card-high">
+                <div class="circle-avatar">👦</div>
+                <div class="option-title">HIGH SCHOOL</div>
+                <div class="option-desc">Class 6th to 10th<br>Secondary School</div>
+            </a>
+
+            <!-- OPTION 3: INTERMEDIATE / DIPLOMA -->
+            <a href="http://localhost:3004" class="option-card card-inter">
+                <div class="circle-avatar">📚</div>
+                <div class="option-title">INTERMEDIATE</div>
+                <div class="option-desc">Junior College<br>& Diploma Courses</div>
+            </a>
+
+            <!-- OPTION 4: B.TECH / HIGHER -->
+            <a href="http://localhost:3005" class="option-card card-btech">
+                <div class="circle-avatar">💻</div>
+                <div class="option-title">B.TECH / HIGHER</div>
+                <div class="option-desc">Undergraduate<br>& Engineering Programs</div>
+            </a>
+        </div>
+
+        <div class="portal-link-footer">
+            Are you a Teacher or Parent? <a href="http://localhost:3001">Open Parent & Teacher Portal →</a>
+        </div>
+    </div>
+
+    <script>
+        // Simulate smooth Gateway load animation
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const screen = document.getElementById('loading-screen');
+                if (screen) screen.classList.add('hidden');
+            }, 600);
+        });
+    </script>
+</body>
+</html>

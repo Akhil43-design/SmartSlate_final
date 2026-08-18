@@ -1,120 +1,90 @@
 const express = require('express');
 const router = express.Router();
-const { get, all } = require('../db/database');
+const { get, all, run } = require('../db/database');
 const { authenticateToken } = require('../middleware/auth');
 
-// GET /api/chat/groups - Get available chat groups for user
-router.get('/groups', authenticateToken, async (req, res) => {
-    try {
-        let classId = null;
-        if (req.user.role === 'student') {
-            const student = await get("SELECT class_id FROM students WHERE user_id = ?", [req.user.id]);
-            if (student) classId = student.class_id;
-        } else if (req.user.role === 'teacher') {
-            const teacherClass = await get("SELECT id FROM classes WHERE teacher_id = ?", [req.user.id]);
-            if (teacherClass) classId = teacherClass.id;
-        }
-
-        let groups = [];
-        if (classId) {
-            groups = await all("SELECT * FROM class_groups WHERE class_id = ?", [classId]);
-        } else {
-            groups = await all("SELECT * FROM class_groups");
-        }
-
-        res.json({ groups });
-    } catch (err) {
-        console.error('Fetch chat groups error:', err);
-        res.status(500).json({ error: 'Error fetching chat groups.' });
-    }
-});
-
-// GET /api/chat/messages - Fetch history for a group or direct contact
+// GET /api/chat/messages
 router.get('/messages', authenticateToken, async (req, res) => {
     try {
-        const { groupId, receiverId } = req.query;
-
-        if (groupId) {
-            const messages = await all(
-                `SELECT m.*, u.name as sender_name, u.role as sender_role
-                 FROM messages m
-                 JOIN users u ON m.sender_id = u.id
-                 WHERE m.group_id = ?
-                 ORDER BY m.sent_at ASC LIMIT 100`,
-                [groupId]
-            );
-            return res.json({ messages });
-        }
+        const { receiverId } = req.query;
 
         if (receiverId) {
             const messages = await all(
                 `SELECT m.*, u.name as sender_name, u.role as sender_role
                  FROM messages m
                  JOIN users u ON m.sender_id = u.id
-                 WHERE (m.sender_id = ? AND m.receiver_id = ?) 
-                    OR (m.sender_id = ? AND m.receiver_id = ?)
+                 WHERE (m.sender_id = ? AND m.receiver_id = ?) OR (m.sender_id = ? AND m.receiver_id = ?)
                  ORDER BY m.sent_at ASC LIMIT 100`,
                 [req.user.id, receiverId, receiverId, req.user.id]
             );
             return res.json({ messages });
         }
 
-        res.status(400).json({ error: 'Either groupId or receiverId parameter is required.' });
+        res.json({ messages: [] });
     } catch (err) {
         console.error('Fetch chat messages error:', err);
-        res.status(500).json({ error: 'Error fetching messages.' });
+        res.status(500).json({ error: 'Error fetching chat messages.' });
     }
 });
 
-// GET /api/chat/direct-contacts - List potential 1-on-1 chat contacts
-router.get('/direct-contacts', authenticateToken, async (req, res) => {
+// POST /api/chat/send - Send direct message
+router.post('/send', authenticateToken, async (req, res) => {
     try {
-        let contacts = [];
-        if (req.user.role === 'student') {
-            // Find class teacher
-            contacts = await all(
-                `SELECT u.id, u.name, u.role, u.email
-                 FROM users u
-                 JOIN teachers t ON u.id = t.user_id
-                 JOIN classes c ON t.user_id = c.teacher_id
-                 JOIN students s ON c.id = s.class_id
-                 WHERE s.user_id = ?`,
-                [req.user.id]
-            );
-        } else if (req.user.role === 'parent') {
-            // Find teachers of linked children
-            contacts = await all(
-                `SELECT DISTINCT u.id, u.name, u.role, u.email
-                 FROM parent_links pl
-                 JOIN students s ON pl.student_id = s.id
-                 JOIN classes c ON s.class_id = c.id
-                 JOIN users u ON c.teacher_id = u.id
-                 WHERE pl.parent_user_id = ? AND pl.status = 'accepted'`,
-                [req.user.id]
-            );
-        } else if (req.user.role === 'teacher') {
-            // Find students and parents in teacher's classes
-            contacts = await all(
-                `SELECT DISTINCT u.id, u.name, u.role, u.email
-                 FROM classes c
-                 JOIN students s ON c.id = s.class_id
-                 JOIN users u ON s.user_id = u.id
-                 WHERE c.teacher_id = ?
-                 UNION
-                 SELECT DISTINCT u.id, u.name, u.role, u.email
-                 FROM classes c
-                 JOIN students s ON c.id = s.class_id
-                 JOIN parent_links pl ON s.id = pl.student_id
-                 JOIN users u ON pl.parent_user_id = u.id
-                 WHERE c.teacher_id = ?`,
-                [req.user.id, req.user.id]
-            );
+        const { receiverId, content } = req.body;
+        if (!receiverId || !content || !content.trim()) {
+            return res.status(400).json({ error: 'receiverId and content are required.' });
         }
 
-        res.json({ contacts });
+        const result = await run(
+            "INSERT INTO messages (sender_id, receiver_id, content) VALUES (?, ?, ?)",
+            [req.user.id, receiverId, content.trim()]
+        );
+
+        res.status(201).json({
+            message: 'Message sent!',
+            data: {
+                id: result.id,
+                sender_id: req.user.id,
+                receiver_id: receiverId,
+                content: content.trim(),
+                sent_at: new Date().toISOString()
+            }
+        });
     } catch (err) {
-        console.error('Fetch direct contacts error:', err);
-        res.status(500).json({ error: 'Error fetching chat contacts.' });
+        console.error('Send message error:', err);
+        res.status(500).json({ error: 'Error sending message.' });
+    }
+});
+
+// GET /api/chat/announcements
+router.get('/announcements', authenticateToken, async (req, res) => {
+    try {
+        const FirebaseCloudService = require('../services/firebaseAdmin');
+        const teacherUid = String(req.user.uid || req.user.id);
+        const announcements = await FirebaseCloudService.getTeacherAnnouncements(teacherUid);
+        res.json({ success: true, announcements });
+    } catch (err) {
+        res.json({ success: true, announcements: [] });
+    }
+});
+
+// POST /api/chat/announcements
+router.post('/announcements', authenticateToken, async (req, res) => {
+    try {
+        const FirebaseCloudService = require('../services/firebaseAdmin');
+        const { title, content, message, classId, subject } = req.body;
+        const teacherUid = String(req.user.uid || req.user.id);
+        const ann = await FirebaseCloudService.createAnnouncement({
+            title: title || 'Class Announcement',
+            content: content || message || '',
+            classId: classId || 'all',
+            subject: subject || 'General Notice',
+            teacherName: req.user.name || 'Class Teacher',
+            teacherUid
+        });
+        res.status(201).json({ success: true, message: 'Announcement posted successfully!', announcement: ann });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 

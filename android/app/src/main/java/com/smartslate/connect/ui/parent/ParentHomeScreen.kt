@@ -151,7 +151,7 @@ fun ParentHomeScreen(
                 title = "Homework Done",
                 value = "${prog?.completedAssignments ?: 11} / ${prog?.totalAssignments ?: 12}",
                 subtitle = "95% Submission Rate",
-                icon = Icons.Default.AssignmentCheck,
+                icon = Icons.Default.AssignmentTurnedIn,
                 accentColor = AccentTealDark,
                 modifier = Modifier
                     .weight(1f)

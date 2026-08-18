@@ -1,8 +1,45 @@
+# Dependencies
 node_modules/
+.pnp
+.pnp.js
+
+# Environment and Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+service-account*.json
+firebase-admin*.json
+*credential*.json
+
+# SQLite Databases & Logs
 *.db
 *.db-shm
 *.db-wal
-.DS_Store
-.env
+*.sqlite
+*.sqlite3
+logs/
+*.log
+
+# Build & Dist Outputs
 dist/
 build/
+.output/
+.tempmediaStorage/
+.user_uploaded/
+
+# System and IDE
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+.gradle/
+android/.gradle/
+*.docx
+# Backups
+backups/
+backup/

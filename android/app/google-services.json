@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "100000000000",
-    "project_id": "smartslate-app",
-    "storage_bucket": "smartslate-app.appspot.com"
+    "project_number": "888987271375",
+    "project_id": "smartslate-3c8f9",
+    "storage_bucket": "smartslate-3c8f9.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:100000000000:android:smartslateconnect2026",
+        "mobilesdk_app_id": "1:888987271375:android:d7dc3efa025234a99c37ba",
         "android_client_info": {
           "package_name": "com.smartslate.connect"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDummyKeyForSmartSlate2026"
+          "current_key": "AIzaSyDTHDtKUx_KSRPxxol0vmowI8cKKIdEP_c"
         }
       ],
       "services": {

@@ -6,10 +6,10 @@
     <title>SmartSlate Student OS — Digital Learning Notebook</title>
     
     <!-- CSS Design System -->
-    <link rel="stylesheet" href="/css/variables.css">
-    <link rel="stylesheet" href="/css/components.css">
-    <link rel="stylesheet" href="/css/notebook.css">
-    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/variables.css?v=2.0">
+    <link rel="stylesheet" href="/css/components.css?v=2.0">
+    <link rel="stylesheet" href="/css/notebook.css?v=2.0">
+    <link rel="stylesheet" href="/css/styles.css?v=2.0">
 </head>
 <body>
 
@@ -74,15 +74,17 @@
     </svg>
 
     <!-- Splash / Loading Screen -->
-    <div id="loading-screen">
-        <div class="splash-logo-container">
-            <div class="splash-icon">
-                <svg class="icon-svg icon-svg-xl"><use href="#icon-book"/></svg>
+    <div id="loading-screen" style="position: fixed; inset: 0; background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; text-align: center; font-family: system-ui, -apple-system, sans-serif;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #8864F3, #6D28D9); border-radius: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 32px rgba(136, 100, 243, 0.4); animation: pulse 2s infinite ease-in-out;">
+                <span style="font-size: 42px;">📖</span>
             </div>
-            <div class="splash-title">SmartSlate Student</div>
+            <div>
+                <h1 style="font-size: 32px; font-weight: 900; color: #FFFFFF; letter-spacing: -0.5px; margin: 0;">SMARTSLATE</h1>
+                <p style="font-size: 14px; font-weight: 600; color: #C4B5FD; margin-top: 6px;">Learn Offline. Connect When Online.</p>
+            </div>
         </div>
-        <div class="spinner"></div>
-        <p style="margin-top: 16px; color: var(--text-secondary); font-weight: 600;">Loading Raspberry Pi Kiosk...</p>
+        <div class="spinner" style="margin-top: 32px; border-top-color: #8864F3;"></div>
     </div>
 
     <div id="app">
@@ -141,8 +143,12 @@
 
         <!-- Main View Container -->
         <main class="view-container">
+            <div id="view-gateway" class="view-section" style="display: none;"></div>
             <div id="view-auth" class="view-section" style="display: none;"></div>
             <div id="view-student" class="view-section" style="display: none;"></div>
+            <div id="view-student-5thbelow" class="view-section" style="display: none;"></div>
+            <div id="view-student-6to10th" class="view-section" style="display: none;"></div>
+            <div id="view-student-category-placeholder" class="view-section" style="display: none;"></div>
             <div id="view-settings" class="view-section" style="display: none;"></div>
         </main>
 
@@ -152,17 +158,26 @@
     <div id="modal-container"></div>
     <div id="toast-container" class="toast-container"></div>
 
-    <!-- JavaScript Dependencies -->
+    <!-- Configuration & JavaScript Dependencies -->
+    <script src="/js/config/dashboardUrls.js?v=2.0"></script>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/api.js"></script>
-    <script src="/js/socket.js"></script>
+    <!-- Firebase Web SDK & Service -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="/shared/services/firebaseAuthService.js?v=2.0"></script>
+    <script src="/shared/services/taskService.js?v=2.0"></script>
+    <script src="/js/api.js?v=2.0"></script>
+    <script src="/js/socket.js?v=2.0"></script>
     
     <!-- View Modules -->
-    <script src="/js/views/authView.js"></script>
-    <script src="/js/views/studentView.js"></script>
-    <script src="/js/views/settingsView.js"></script>
+    <script src="/js/views/gatewayView.js?v=2.0"></script>
+    <script src="/js/views/authView.js?v=2.0"></script>
+    <script src="/js/views/primaryStudentView.js?v=2.0"></script>
+    <script src="/js/views/studentView.js?v=2.0"></script>
+    <script src="/js/views/settingsView.js?v=2.0"></script>
 
     <!-- Main Application Router -->
-    <script src="/js/app.js"></script>
+    <script src="/js/app.js?v=2.0"></script>
 </body>
 </html>

@@ -4,14 +4,16 @@
   "description": "SmartSlate Platform - Offline-First Student OS for Raspberry Pi & Cloud Parent/Teacher Web Portal",
   "main": "student/server/server.js",
   "scripts": {
+    "start": "node start_all_servers.js",
+    "start:all": "node start_all_servers.js",
+    "dev:all": "node start_all_servers.js",
     "student": "node student/server/server.js",
     "parent-teacher": "node parent-teacher/server/server.js",
     "dev:student": "node student/server/server.js",
     "dev:parent-teacher": "node parent-teacher/server/server.js",
     "seed:student": "node student/server/db/seed.js",
     "seed:parent-teacher": "node parent-teacher/server/db/seed.js",
-    "seed": "npm run seed:student && npm run seed:parent-teacher",
-    "start": "npm run student"
+    "seed": "npm run seed:student && npm run seed:parent-teacher"
   },
   "keywords": [
     "smartslate",
@@ -26,10 +28,15 @@
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
+    "docx": "^9.7.1",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "firebase-admin": "^14.2.0",
     "jsonwebtoken": "^9.0.2",
     "socket.io": "^4.7.5",
     "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "firebase-tools": "^15.27.0"
   }
 }
