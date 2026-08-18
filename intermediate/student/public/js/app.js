@@ -545,10 +545,9 @@ const App = {
         await API.logout().catch(() => {});
         API.setToken(null);
         this.currentUser = null;
-        if (typeof AcademicData !== 'undefined') {
-            AcademicData.studentProfile = null;
-        }
-        const gatewayUrl = (typeof MAIN_APP_URL !== 'undefined' ? MAIN_APP_URL : 'http://localhost:3000');
+        const host = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : 'localhost';
+        const proto = (typeof window !== 'undefined' && window.location && window.location.protocol) ? window.location.protocol : 'http:';
+        const gatewayUrl = (typeof MAIN_APP_URL !== 'undefined' ? MAIN_APP_URL : `${proto}//${host}:3000`);
         window.location.replace(gatewayUrl);
     },
 

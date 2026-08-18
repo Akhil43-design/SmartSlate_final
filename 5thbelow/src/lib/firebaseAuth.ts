@@ -77,7 +77,14 @@ export async function signInWithEmail(email: string, password: string): Promise<
   }
 }
 
-const MAIN_GATEWAY_URL = "http://localhost:3000";
+function getMainGatewayUrl(): string {
+  if (typeof window !== "undefined" && window.location) {
+    const host = window.location.hostname || "localhost";
+    const proto = window.location.protocol || "http:";
+    return `${proto}//${host}:3000`;
+  }
+  return "http://localhost:3000";
+}
 
 // 3. SIGN OUT
 export async function signOutFirebaseUser(): Promise<void> {
@@ -89,7 +96,7 @@ export async function signOutFirebaseUser(): Promise<void> {
     }
   }
   if (typeof window !== "undefined") {
-    window.location.replace(MAIN_GATEWAY_URL);
+    window.location.replace(getMainGatewayUrl());
   }
 }
 

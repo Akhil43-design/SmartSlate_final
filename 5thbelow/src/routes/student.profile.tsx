@@ -227,7 +227,9 @@ function Profile() {
             if (typeof logoutFirebaseUser === "function") {
               await logoutFirebaseUser();
             }
-            window.location.replace("http://localhost:3000");
+            const host = (typeof window !== "undefined" && window.location.hostname) ? window.location.hostname : "localhost";
+            const proto = (typeof window !== "undefined" && window.location.protocol) ? window.location.protocol : "http:";
+            window.location.replace(`${proto}//${host}:3000`);
           }}
           className="soft-glass flex w-full items-center justify-center gap-2 rounded-[2rem] p-4 text-center font-display text-base font-extrabold uppercase text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
         >
