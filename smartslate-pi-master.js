@@ -70,10 +70,7 @@ const SERVICES = [
     }
 ];
 
-console.log('===============================================================');
-console.log('🍇 SmartSlate Production Master Server — Raspberry Pi 2 W');
-console.log('   OS: Raspberry Pi OS | RAM Limit: 512 MB | Wi-Fi: 10.42.0.1');
-console.log('===============================================================\n');
+const { migrateAllDatabases } = require('./shared/db/migrate');
 
 const runningProcesses = [];
 
@@ -106,15 +103,50 @@ function startService(service) {
     });
 
     child.on('exit', (code, signal) => {
-        console.warn(`⚠️ [${service.name}] Process exited (Code: ${code}, Signal: ${signal}). Auto-restarting in 3s...`);
-        setTimeout(() => startService(service), 3000);
+        if (!shuttingDown) {
+            console.warn(`⚠️ [${service.name}] Process exited (Code: ${code}, Signal: ${signal}). Auto-restarting in 3s...`);
+            setTimeout(() => startService(service), 3000);
+        }
     });
 
     runningProcesses.push({ name: service.name, child, port: service.port });
 }
 
-// Start all services
-SERVICES.forEach(startService);
+let shuttingDown = false;
+
+async function bootstrap() {
+    console.log('===============================================================');
+    console.log('🍇 SmartSlate Production Master Server — Raspberry Pi 2 W');
+    console.log('   OS: Raspberry Pi OS | RAM Limit: 512 MB | Wi-Fi: 10.42.0.1');
+    console.log('===============================================================\n');
+
+    // 1. Auto-build 5thbelow assets if not present
+    const elementaryNitroBundle = path.join(rootDir, '5thbelow/.output/server/index.mjs');
+    if (!fs.existsSync(elementaryNitroBundle) && fs.existsSync(path.join(rootDir, '5thbelow/package.json'))) {
+        try {
+            console.log('📦 [Pre-start] Building Elementary School (5thbelow) production bundle...');
+            execSync('npm run build', { cwd: path.join(rootDir, '5thbelow'), stdio: 'inherit' });
+            console.log('✅ [Pre-start] Elementary School production bundle ready.');
+        } catch (e) {
+            console.warn('⚠️ [Pre-start] Elementary build note:', e.message);
+        }
+    }
+
+    // 2. Run safe SQLite migrations once BEFORE child processes boot
+    try {
+        await migrateAllDatabases(rootDir);
+    } catch (e) {
+        console.warn('⚠️ [Pre-start] Database migration note:', e.message);
+    }
+
+    // 3. Stagger launch of microservices slightly (150ms apart) to eliminate CPU/IO spike on ARM core
+    for (let i = 0; i < SERVICES.length; i++) {
+        startService(SERVICES[i]);
+        await new Promise(r => setTimeout(r, 150));
+    }
+}
+
+bootstrap();
 
 // Health Checker after 6 seconds
 setTimeout(() => {
@@ -131,6 +163,7 @@ setTimeout(() => {
 
 // Graceful shutdown handling
 function shutdown() {
+    shuttingDown = true;
     console.log('\nShutting down SmartSlate services...');
     runningProcesses.forEach(p => {
         try { p.child.kill('SIGTERM'); } catch(e) {}

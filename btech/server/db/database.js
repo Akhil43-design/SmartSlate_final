@@ -10,6 +10,8 @@ if (!fs.existsSync(dataDir)) {
 const dbPath = path.join(dataDir, 'smartslate-btech.db');
 const schemaPath = path.join(__dirname, '../../../shared/db/schema.sql');
 
+const { runSafeMigrations } = require('../../../shared/db/migrate');
+
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error('[SQLite B.Tech] Error opening database:', err.message);
@@ -18,7 +20,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
         db.run('PRAGMA foreign_keys = ON;');
         db.run('PRAGMA journal_mode = WAL;');
         db.run('PRAGMA synchronous = NORMAL;');
-        db.run('PRAGMA busy_timeout = 5000;');
+        db.run('PRAGMA busy_timeout = 30000;');
     }
 });
 
@@ -49,50 +51,13 @@ function all(sql, params = []) {
     });
 }
 
-function initDb() {
-    return new Promise((resolve, reject) => {
-        if (fs.existsSync(schemaPath)) {
-            const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-            db.exec(schemaSql, (err) => {
-                if (err) {
-                    console.error('[SQLite B.Tech] Failed to run schema.sql:', err);
-                } else {
-                    console.log('[SQLite B.Tech] schema.sql loaded.');
-                }
-                // Run migrations for columns & sync_queue
-                db.run("ALTER TABLE notes ADD COLUMN firebase_uid TEXT", () => {});
-                db.run("ALTER TABLE notes ADD COLUMN note_id TEXT", () => {});
-                db.run("ALTER TABLE notes ADD COLUMN rule_type TEXT DEFAULT 'ruled'", () => {});
-                db.run("ALTER TABLE notes ADD COLUMN drawing_data TEXT DEFAULT ''", () => {});
-                db.run("ALTER TABLE notes ADD COLUMN sync_status TEXT DEFAULT 'pending'", () => {});
-                db.run("ALTER TABLE notes ADD COLUMN deleted INTEGER DEFAULT 0", () => {});
-
-                db.run("ALTER TABLE books ADD COLUMN firebase_uid TEXT", () => {});
-                db.run("ALTER TABLE books ADD COLUMN student_id INTEGER", () => {});
-                db.run("ALTER TABLE books ADD COLUMN book_id TEXT", () => {});
-                db.run("ALTER TABLE books ADD COLUMN description TEXT", () => {});
-                db.run("ALTER TABLE books ADD COLUMN cover_style TEXT DEFAULT 'blue_linen'", () => {});
-                db.run("ALTER TABLE books ADD COLUMN deleted INTEGER DEFAULT 0", () => {});
-
-                db.run("ALTER TABLE students ADD COLUMN student_code TEXT", () => {});
-                db.run("ALTER TABLE users ADD COLUMN student_code TEXT", () => {});
-
-                db.run(`CREATE TABLE IF NOT EXISTS sync_queue (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    firebase_uid TEXT NOT NULL,
-                    entity_type TEXT NOT NULL,
-                    entity_id TEXT NOT NULL,
-                    operation TEXT NOT NULL,
-                    payload TEXT,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    status TEXT DEFAULT 'pending',
-                    retry_count INTEGER DEFAULT 0
-                )`, () => resolve());
-            });
-        } else {
-            resolve();
-        }
-    });
+async function initDb() {
+    try {
+        await runSafeMigrations(dbPath);
+        console.log('[SQLite B.Tech] schema initialized safely.');
+    } catch (err) {
+        console.error('[SQLite B.Tech] Failed to initialize schema safely:', err);
+    }
 }
 
 module.exports = {

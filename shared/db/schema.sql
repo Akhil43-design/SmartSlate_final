@@ -7,7 +7,13 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     student_code TEXT UNIQUE,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    teacher_code TEXT,
+    parent_code TEXT,
+    subject TEXT,
+    phone TEXT,
+    firebase_uid TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS classes (
@@ -24,6 +30,14 @@ CREATE TABLE IF NOT EXISTS students (
     user_id INTEGER UNIQUE NOT NULL,
     class_id INTEGER,
     student_code TEXT UNIQUE NOT NULL,
+    parent_code TEXT,
+    grade TEXT,
+    class_name TEXT,
+    class_id_str TEXT,
+    student_id_str TEXT,
+    firebase_uid TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE SET NULL
 );
@@ -31,6 +45,11 @@ CREATE TABLE IF NOT EXISTS students (
 CREATE TABLE IF NOT EXISTS teachers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER UNIQUE NOT NULL,
+    teacher_code TEXT,
+    subject TEXT,
+    firebase_uid TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
