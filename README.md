@@ -1,137 +1,113 @@
-# SmartSlate — Child OS & Digital Learning Platform
+# 📖 SmartSlate — Unified Digital Learning Platform
 
-SmartSlate is a warm, playful, child-friendly digital learning operating system built for Students, Teachers, and Parents. It features responsive 3D notebook bookshelf rendering, digital stylus slate canvas, time-limited strict exam lockdown mode, direct student-teacher messaging with file & notebook sharing, color-coded teacher student tables, parent report cards, dual-channel alerting, and a 42-icon child OS visual theme.
-
----
-
-## 🎨 Child OS Visual Theme & Rotating Accents
-
-SmartSlate builds on a warm paper background surface (`--paper-bg-primary: #F7F6F3`) with glassmorphic cards and a cheerful multi-color accent system:
-
-| Accent Token | Hex | Role |
-|---|---|---|
-| `--accent-coral` | `#FF6B6B` | Exams, active highlights, urgent indicators |
-| `--accent-green` | `#2ECC71` | Success states, attendance present, high scores |
-| `--accent-blue` | `#4D96FF` | Primary action buttons, notebook accents |
-| `--accent-purple` | `#9B51E0` | Report cards, student badges, progress indicators |
-| `--accent-yellow` | `#FFD93D` | Warnings, study tips, assignment highlights |
+> **Offline-First, Cloud-Synced Digital Education Ecosystem for K-12, Intermediate, & Higher Education.**
 
 ---
 
-## 🔑 Direct PIN-Only Lock Screen & Demo Accounts
+## ⚡ 1-Click Quick Start (Windows Laptop)
 
-On launch, SmartSlate displays a direct 4-digit PIN unlock keypad. Enter any user's unique PIN to immediately unlock their dashboard:
+### Option A: Double-Click the Batch File
+Simply double-click:
+```
+start_smartslate.bat
+```
+*(or run `run.bat`)*
 
-| Avatar | Name | Role | Email | Unique PIN | Student Code |
-|---|---|---|---|---|---|
-| 👨‍🎓 | **Alex Rivera** | Student | `student@smartslate.local` | `1111` | `STU-101` |
-| 👩‍🎓 | **Maya Patel** | Student | `maya@smartslate.local` | `2222` | `STU-102` |
-| 👩‍🏫 | **Prof. Sarah Lin** | Teacher | `teacher@smartslate.local` | `3333` | N/A |
-| 👨‍👩‍👦 | **Robert Rivera** | Parent | `parent@smartslate.local` | `4444` | N/A (Linked to STU-101) |
-
----
-
-## 🚀 1. Local Development Run Guide
-
-### Prerequisites
-- Node.js (v18.0.0 or higher)
-- npm (v8.0.0 or higher)
-
-### Steps
-1. Clone or navigate to the repository directory:
-   ```bash
-   cd SmartSlate
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Initialize & Seed Demo Database:
-   ```bash
-   npm run seed
-   ```
-4. Start the Application Server:
-   ```bash
-   npm start
-   ```
-5. Open browser at `http://localhost:3000`.
-
----
-
-## 🍓 2. Raspberry Pi 2W Deployment Guide
-
-### A. Raspberry Pi OS Setup & Node.js Installation
-1. Flash **Raspberry Pi OS Lite (64-bit)** or **Raspberry Pi OS Desktop** onto a microSD card using Raspberry Pi Imager.
-2. Connect Pi to Wi-Fi or local network and log in via SSH:
-   ```bash
-   ssh pi@smartslate.local
-   ```
-3. Install Node.js 18 LTS:
-   ```bash
-   curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-   sudo apt-get install -y nodejs git build-essential
-   ```
-4. Copy/clone SmartSlate onto the Pi into `/home/pi/smartSlate`.
-
-### B. Persistent Background Service (PM2 / Systemd)
-To keep SmartSlate running continuously across system reboots:
+### Option B: Run via Terminal
 ```bash
-sudo npm install -g pm2
-cd /home/pi/smartSlate
-npm install
-npm run seed
-pm2 start server/server.js --name "smartslate"
-pm2 save
-pm2 startup
+node smartslate-master.js
 ```
 
-### C. Host Local Wi-Fi Access Point (Standalone Tablet Operation)
-If using the Pi without an external Wi-Fi router so tablets connect directly to the Pi's Wi-Fi network:
-1. Install `hostapd` and `dnsmasq`:
-   ```bash
-   sudo apt-get install -y hostapd dnsmasq
-   ```
-2. Configure static IP `192.168.4.1` on `wlan0` in `/etc/dhcpcd.conf`.
-3. Configure `dnsmasq` to assign IPs `192.168.4.10` to `192.168.4.50`.
-4. Configure `hostapd` with SSID `SmartSlate-Wifi` and passphrase `learningfun`.
-5. Enable and start services:
-   ```bash
-   sudo systemctl unmask hostapd
-   sudo systemctl enable hostapd dnsmasq
-   sudo systemctl start hostapd dnsmasq
-   ```
+---
 
-### D. Set Local mDNS Address (`smartslate.local`)
-Enable Avahi mDNS so tablets can type `http://smartslate.local:3000`:
-```bash
-sudo apt-get install -y avahi-daemon
-sudo systemctl enable avahi-daemon
-sudo systemctl start avahi-daemon
-```
+## 📡 Automatic Dynamic Wi-Fi & Mobile Access
 
-### E. Configure Chromium Full-Screen Touchscreen Kiosk Mode
-On startup, launch Chromium full screen pointing to SmartSlate:
-1. Install Chromium & X11 utilities:
-   ```bash
-   sudo apt-get install -y chromium-browser unclutter xdotool
-   ```
-2. Create kiosk autostart script `~/.config/autostart/kiosk.desktop`:
-   ```ini
-   [Desktop Entry]
-   Type=Application
-   Name=SmartSlate Kiosk
-   Exec=chromium-browser --noerrdialogs --disable-infobars --kiosk --touch-events=enabled --check-for-update-interval=31536000 http://localhost:3000
-   X-GNOME-Autostart-enabled=true
-   ```
-3. Reboot Pi (`sudo reboot`). Chromium will open full-screen in kiosk mode automatically.
+SmartSlate includes **automatic local network detection**. Whenever you start the server:
+1. It automatically inspects your active Wi-Fi or Local Area Network (LAN) connection.
+2. Even if your IP address changes (e.g. moving between your home Wi-Fi, your friend's Wi-Fi, college network, or a mobile hotspot), SmartSlate will dynamically detect the new IP.
+3. The terminal displays the exact live links for both your **Laptop** and your **Mobile Phone**.
+
+### 📱 How to Open on Mobile / Tablet:
+1. Connect your mobile phone to the **same Wi-Fi** network as your laptop (or connect your phone to your laptop's mobile hotspot).
+2. Open Chrome, Safari, or Firefox on your phone.
+3. Type the detected Wi-Fi IP address shown in the terminal (e.g., `http://<YOUR_IP>:3000`).
 
 ---
 
-## 🛠️ 3. Troubleshooting Guide
+## 🏛️ Platform Architecture & Port Directory
 
-| Issue | Solution |
-|---|---|
-| **Pi running slow / UI sluggish** | All animations are capped at <400ms. Ensure Hardware Acceleration is enabled in Chromium (`--enable-gpu-rasterization`). |
-| **Tablet cannot find `smartslate.local`** | Ensure Avahi daemon is running (`sudo systemctl status avahi-daemon`). Alternatively use Pi's IP address (`http://192.168.4.1:3000`). |
-| **Touchscreen input inverted or not registering** | Add `dtoverlay=rpi-ft5406` to `/boot/config.txt` and set `--touch-events=enabled` in Chromium kiosk flags. |
-| **PIN code rejected** | Default PIN for all demo users is `1234`. Use "Create New Account" tile to register a custom account. |
+| Port | Portal / Microservice | Description |
+| :--- | :--- | :--- |
+| **`3000`** | 🎓 **Main Learning Gateway** | Central unified student entry point, account registration & tier routing. |
+| **`3001`** | 👨‍👩‍👧‍👦 **Parent & Teacher Portal** | Teacher classroom dashboard, assignment creator, grading & parent child-tracking. |
+| **`3002`** | 🎒 **Elementary School (Classes 1–5)** | Gamified learning interface, interactive subjects, audio reader & drawing canvas. |
+| **`3003`** | 🏫 **High School (Classes 6–10)** | SSC curriculum, digital notebooks, notes sync, exams & assignment submissions. |
+| **`3004`** | 🧪 **Intermediate (Classes 11–12)** | MPC & BiPC syllabus, practice papers, formulas & focus-mode digital slate. |
+| **`3005`** | 💻 **B.Tech / Higher Education** | Engineering branch modules, coding labs, research papers & semester notes. |
+
+---
+
+## 🔑 Demo Login Credentials
+
+All tiers are pre-seeded with authentic demo profiles:
+
+| Role | Email | Password | Code / Identifier |
+| :--- | :--- | :--- | :--- |
+| 👨‍🏫 **Teacher** | `teacher_math_hs@smartslate.test` | `SmartSlate@123` | `TCH-PRIYA-MATH-05` (Maths) |
+| 👨‍👩‍👧 **Parent** | `parent_ramesh@smartslate.test` | `SmartSlate@123` | `PAR-RAMES-101` |
+| 🎓 **Student** | `student_151@smartslate.test` | `SmartSlate@123` | `STU-MEGHB1A-11` |
+
+---
+
+## 💾 Database & Offline-Sync Architecture
+
+SmartSlate is designed to work **100% offline** in rural classrooms and sync automatically when connected to Wi-Fi:
+
+1. **Local SQLite Databases**:
+   - Each portal maintains an optimized SQLite database with **WAL (Write-Ahead Logging)** mode and 30-second busy timeouts to ensure high-concurrency performance without database locks.
+   - Idempotent schema migrations execute automatically on startup (`shared/db/migrate.js`).
+2. **Cloud Sync (Firebase Firestore)**:
+   - When internet connectivity is available, notes, tasks, assignments, and attendance sync bidirectionally with Firebase Firestore.
+3. **Dynamic Host Routing**:
+   - Client applications dynamically resolve their current hostname (`window.location.hostname`), guaranteeing smooth cross-portal navigation and logout redirects across local IPs and domains.
+
+---
+
+## 🛠️ Troubleshooting & Tips
+
+### Mobile phone cannot open the links?
+1. **Same Wi-Fi**: Verify both your laptop and phone are on the exact same Wi-Fi network (or mobile hotspot).
+2. **Windows Private Network**:
+   - Open Windows **Settings** > **Network & internet** > **Wi-Fi** > Click your connected network > Select **Private network**.
+3. **Firewall Access**:
+   - If Windows Defender Firewall asks for permission for `Node.js`, check **Private networks** and click **Allow access**.
+
+### Database or Port Conflict?
+- If a previous process is still holding a port, stop it via terminal:
+  ```powershell
+  taskkill /F /IM node.exe
+  ```
+  Then re-launch `start_smartslate.bat`.
+
+---
+
+## 📂 Repository Structure
+
+```
+SmartSlate_final/
+├── start_smartslate.bat      # 1-Click Windows Launcher
+├── run.bat                   # Launcher shortcut
+├── smartslate-master.js      # Universal Node.js Master Orchestrator with dynamic IP
+├── shared/                   # Shared SQLite schemas, migrations, and seed scripts
+│   ├── db/
+│   │   ├── database.js
+│   │   ├── migrate.js        # Safe idempotent SQLite schema migrator
+│   │   └── seed.js           # Safe upsert database seeder
+├── student/                  # Main Learning Gateway (Port 3000)
+├── parent-teacher/           # Teacher & Parent Web Portal (Port 3001)
+├── 5thbelow/                 # Elementary School App (Port 3002, TanStack/Vite)
+├── 6to10th/                  # High School App (Port 3003)
+├── intermediate/             # Intermediate Classes 11–12 App (Port 3004)
+├── btech/                    # B.Tech Engineering App (Port 3005)
+└── android/                  # Native Android Companion App
+```
