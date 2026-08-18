@@ -5,12 +5,24 @@
  * Manages all educational tiers and portals within strict memory constraints.
  */
 
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
 
 const rootDir = path.resolve(__dirname);
+
+// Auto-build 5thbelow assets if not present
+const elementaryNitroBundle = path.join(rootDir, '5thbelow/.output/server/index.mjs');
+if (!fs.existsSync(elementaryNitroBundle) && fs.existsSync(path.join(rootDir, '5thbelow/package.json'))) {
+    try {
+        console.log('📦 [Pre-start] Building Elementary School (5thbelow) production bundle...');
+        execSync('npm run build', { cwd: path.join(rootDir, '5thbelow'), stdio: 'inherit' });
+        console.log('✅ [Pre-start] Elementary School production bundle ready.');
+    } catch (e) {
+        console.warn('⚠️ [Pre-start] Elementary build note:', e.message);
+    }
+}
 
 // Tier configuration with strict memory allocation (max 64M - 96M per process)
 const SERVICES = [

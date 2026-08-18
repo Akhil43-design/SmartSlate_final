@@ -174,8 +174,8 @@ echo -e "   Working Directory: ${BOLD}${INSTALL_DIR}${NC}"
 npm install --production --no-audit --no-fund
 
 if [ -f "5thbelow/package.json" ]; then
-    echo -e "   Installing Elementary School (5thbelow) dependencies..."
-    (cd 5thbelow && npm install --production --no-audit --no-fund || true)
+    echo -e "   Installing Elementary School (5thbelow) dependencies and building production assets..."
+    (cd 5thbelow && npm install --no-audit --no-fund && npm run build || true)
 fi
 
 echo -e "${GREEN}   ✅ Production dependencies installed.${NC}"

@@ -35,18 +35,38 @@ app.use((req, res, next) => {
 });
 
 const fs = require('fs');
+const { pathToFileURL } = require('url');
+
+// Dynamic Nitro / TanStack Start Engine Loader
+let nitroApp = null;
+const nitroBundlePath = path.resolve(__dirname, './.output/server/index.mjs');
+if (fs.existsSync(nitroBundlePath)) {
+    import(pathToFileURL(nitroBundlePath).href).then(m => {
+        nitroApp = m.default || m;
+        console.log('✨ [Elementary SSR/SPA] Nitro TanStack Start engine loaded successfully.');
+    }).catch(err => {
+        console.warn('⚠️ [Elementary SSR/SPA] Could not load Nitro bundle:', err.message);
+    });
+}
 
 // Paths
 const sharedPath = path.resolve(__dirname, '../shared');
-const studentPublicPath = path.resolve(__dirname, '../student/public');
+const outputPublicPath = path.resolve(__dirname, './.output/public');
+const assetsPath = path.join(outputPublicPath, 'assets');
 const localPublicPath = path.resolve(__dirname, './public');
 const distPath = path.resolve(__dirname, './dist');
 
 app.use('/shared', express.static(sharedPath));
+
+if (fs.existsSync(assetsPath)) {
+    app.use('/assets', express.static(assetsPath));
+}
+if (fs.existsSync(outputPublicPath)) {
+    app.use(express.static(outputPublicPath));
+}
 if (fs.existsSync(distPath)) {
     app.use(express.static(distPath));
 }
-app.use(express.static(studentPublicPath));
 app.use(express.static(localPublicPath));
 
 // Mount Student Routes
@@ -83,22 +103,53 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', service: 'smartslate-elementary', level: 'Classes 1–5' });
 });
 
-function getIndexHtml() {
+async function handleElementaryWeb(req, res) {
+    if (nitroApp && typeof nitroApp.fetch === 'function') {
+        try {
+            const proto = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+            const host = req.headers.host || `127.0.0.1:${PORT}`;
+            const fullUrl = `${proto}://${host}${req.originalUrl || req.url}`;
+            
+            const headers = new Headers();
+            for (const [k, v] of Object.entries(req.headers)) {
+                if (v !== undefined) {
+                    if (Array.isArray(v)) {
+                        v.forEach(val => headers.append(k, val));
+                    } else {
+                        headers.set(k, String(v));
+                    }
+                }
+            }
+
+            const fetchReq = new Request(fullUrl, {
+                method: req.method,
+                headers,
+                body: ['GET', 'HEAD'].includes(req.method) ? undefined : req.body
+            });
+
+            const ssrRes = await nitroApp.fetch(fetchReq, {});
+            res.status(ssrRes.status);
+            for (const [k, v] of ssrRes.headers.entries()) {
+                res.setHeader(k, v);
+            }
+            const arrayBuffer = await ssrRes.arrayBuffer();
+            return res.send(Buffer.from(arrayBuffer));
+        } catch (err) {
+            console.error('[Elementary SSR] Render error:', err);
+        }
+    }
+
     const distIndex = path.join(distPath, 'index.html');
-    if (fs.existsSync(distIndex)) return distIndex;
+    if (fs.existsSync(distIndex)) return res.sendFile(distIndex);
     const localPublicIndex = path.join(localPublicPath, 'index.html');
-    if (fs.existsSync(localPublicIndex)) return localPublicIndex;
-    return path.join(studentPublicPath, 'index.html');
+    if (fs.existsSync(localPublicIndex)) return res.sendFile(localPublicIndex);
+    return res.status(503).send('SmartSlate Elementary application starting up...');
 }
 
-// Root & Login SPA Routes
-app.get('/', (req, res) => {
-    res.sendFile(getIndexHtml());
-});
-
-app.get('/login', (req, res) => {
-    res.sendFile(getIndexHtml());
-});
+// Elementary Web Routes
+app.get('/', handleElementaryWeb);
+app.get('/login', handleElementaryWeb);
+app.get('/register', handleElementaryWeb);
 
 // SPA Fallback Route
 app.get('*', (req, res) => {
@@ -108,7 +159,7 @@ app.get('*', (req, res) => {
     if (/\.(js|css|png|jpg|jpeg|gif|svg|ico|json|map|woff2?|ttf|eot)$/i.test(req.path)) {
         return res.status(404).send('Asset not found');
     }
-    res.sendFile(getIndexHtml());
+    return handleElementaryWeb(req, res);
 });
 
 server.listen(PORT, '0.0.0.0', () => {
