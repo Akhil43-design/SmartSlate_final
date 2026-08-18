@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for Owner-Based Data Isolation
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 1. Users Minimal Metadata Collection (users/{uid})
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.uid == request.auth.uid;
+      allow update: if isOwner(userId) && resource.data.uid == request.auth.uid && request.resource.data.uid == request.auth.uid;
+      allow delete: if isOwner(userId);
+    }
+
+    // 2. Canonical Student Profile Collection (students/{studentUid})
+    match /students/{studentUid} {
+      allow read: if isOwner(studentUid);
+      allow create: if isOwner(studentUid) && request.resource.data.uid == request.auth.uid;
+      allow update: if isOwner(studentUid) && resource.data.uid == request.auth.uid && request.resource.data.uid == request.auth.uid;
+      allow delete: if isOwner(studentUid);
+
+      // Student Tasks Subcollection (students/{studentUid}/tasks/{taskId})
+      match /tasks/{taskId} {
+        allow read, write: if isOwner(studentUid);
+      }
+
+      // Student Notes Subcollection (students/{studentUid}/notes/{noteId})
+      match /notes/{noteId} {
+        allow read, create, update, delete: if isOwner(studentUid);
+      }
+    }
+  }
+}

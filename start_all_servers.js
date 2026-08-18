@@ -35,8 +35,8 @@ const SERVICES = [
     {
         name: 'Elementary School (Classes 1–5)',
         port: 3002,
-        cmd: process.platform === 'win32' ? 'npx.cmd' : 'npx',
-        args: ['vite', 'dev', '--port', '3002', '--host', '0.0.0.0'],
+        cmd: 'node',
+        args: ['server.cjs'],
         cwd: path.join(rootDir, '5thbelow')
     },
     {

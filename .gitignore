@@ -26,6 +26,8 @@ logs/
 dist/
 build/
 .output/
+.tanstack/
+.lovable/
 .tempmediaStorage/
 .user_uploaded/
 
