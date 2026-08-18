@@ -75,10 +75,18 @@ function probePort(port) {
     });
 }
 
+const { migrateAllDatabases } = require('./shared/db/migrate');
+
 async function startAll() {
     console.log('=================================================================');
     console.log('🚀 SMARTSLATE MASTER SERVER LAUNCHER');
     console.log('=================================================================\n');
+
+    try {
+        await migrateAllDatabases(rootDir);
+    } catch (e) {
+        console.warn('⚠️ [Pre-start] Database migration note:', e.message);
+    }
 
     for (const s of SERVICES) {
         const check = await probePort(s.port);

@@ -230,12 +230,17 @@ async function migrateAllDatabases(rootDir) {
     ];
 
     console.log('🔄 [Database Pre-Flight] Running safe SQLite schema migrations...');
+    let failureCount = 0;
     for (const dbPath of dbs) {
         try {
             await runSafeMigrations(dbPath);
         } catch (err) {
+            failureCount++;
             console.error(`❌ [Database Pre-Flight] Migration error on ${dbPath}:`, err.message);
         }
+    }
+    if (failureCount > 0) {
+        throw new Error(`${failureCount} database migration(s) encountered errors.`);
     }
     console.log('✅ [Database Pre-Flight] All SQLite databases safely migrated and WAL-enabled.');
 }
@@ -244,3 +249,17 @@ module.exports = {
     runSafeMigrations,
     migrateAllDatabases
 };
+
+// Safe CLI entry point
+if (require.main === module) {
+    const rootDir = path.resolve(__dirname, '../..');
+    migrateAllDatabases(rootDir)
+        .then(() => {
+            console.log('✅ SQLite migrations completed successfully.');
+            process.exit(0);
+        })
+        .catch((err) => {
+            console.error('❌ Migration failed:', err.message || err);
+            process.exit(1);
+        });
+}
